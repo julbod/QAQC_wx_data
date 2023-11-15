@@ -57,8 +57,8 @@ for l in range(len(wx_stations_name)):
     print('###### Cleaning snow data for station: %s ######' %(sql_name))     
     
     # create new directory on Windows (if does not exist) and cd into it
-    Path("D:/Vancouver_Island_University/Wx_station/data/QAQC/" + sql_database + "/SnowDepth_v2").mkdir(parents=True, exist_ok=True)
-    os.chdir("D:/Vancouver_Island_University/Wx_station/data/QAQC/" + sql_database + "/SnowDepth_v2")
+    Path("D:/Vancouver_Island_University/Wx_station/data/QAQC/" + sql_database + "/SnowDepth_v3").mkdir(parents=True, exist_ok=True)
+    os.chdir("D:/Vancouver_Island_University/Wx_station/data/QAQC/" + sql_database + "/SnowDepth_v3")
     
     #%% import current data on SQL database and clean name of some columns to match
     # CSV column names
@@ -166,7 +166,7 @@ for l in range(len(wx_stations_name)):
         
         #%% Apply static range test (remove values where difference is > than value)
         # Maximum value between each step: 2 cm
-        sql_step = 2 # in cm
+        sql_step = 25 # in cm
         data = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         
         for i in range(len(data)-1):
@@ -254,7 +254,7 @@ for l in range(len(wx_stations_name)):
         # calculating the difference between the value at [i] and the mean of 
         # sliding window which should not exceed a specific value
         # Maximum value between each step: 25 cm
-        value_exceeded = 25 # in cm
+        value_exceeded = 30 # in cm
         
         data = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         idx_exist = (data.iloc[:].loc[data.isnull()==False].index.tolist()) # indices of existing values
@@ -316,6 +316,30 @@ for l in range(len(wx_stations_name)):
         idx_longest_sequence = data_bool.index[max(((lambda y: (y[0][0], len(y)))(list(g)) for k, g in groupby(enumerate(data_bool==1), lambda x: x[1]) if k), key=lambda z: z[1])[0]]
         sql_file[var].iloc[np.arange(idx_longest_sequence,dt_yr[1].item()+1)] = 0
         
+        # store for plotting
+        summer_zeroing = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+
+        #%% one more pass to correct remaining outliers using the step size
+        # and different levels until it's all 'shaved off'
+        sql_steps = [20,15,10,5] # in cm
+        for h in range(len(sql_steps)):
+            sql_step = sql_steps[h] # in cm
+            data = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+            idx_exist = (data.iloc[:].loc[data.isnull()==False].index.tolist()) # indices of existing values
+            data = data[idx_exist]
+            
+            for i in range(len(data)-1):
+                if abs(data[data.index[i]] - data[data.index[i-1]]) > sql_step:
+                    idx = data.index[i]
+                    sql_file.loc[idx, var] = np.nan # place nans if diff is > 2 cm
+            
+        # plot static-test cleaned data
+        #fig = plt.figure()
+        #plt.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)])
+        #plt.title(sql_name + ' %s Static (%d cm) WTYR %d-%d' %(var_name,sql_step, yr_range[k],yr_range[k]+1))
+        #plt.close()
+        #plt.show()
+            
         # store for plotting
         pre_interpolation = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         

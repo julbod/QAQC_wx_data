@@ -57,8 +57,8 @@ for l in range(len(wx_stations_name)):
     print('###### Cleaning snow data for station: %s ######' %(sql_name))     
     
     # create new directory on Windows (if does not exist) and cd into it
-    Path("D:/Vancouver_Island_University/Wx_station/data/QAQC/" + sql_database + "/SnowDepth_v3").mkdir(parents=True, exist_ok=True)
-    os.chdir("D:/Vancouver_Island_University/Wx_station/data/QAQC/" + sql_database + "/SnowDepth_v3")
+    Path("D:/Vancouver_Island_University/Wx_station/data/QAQC/" + sql_database + "/SnowDepth_v4").mkdir(parents=True, exist_ok=True)
+    os.chdir("D:/Vancouver_Island_University/Wx_station/data/QAQC/" + sql_database + "/SnowDepth_v4")
     
     #%% import current data on SQL database and clean name of some columns to match
     # CSV column names
@@ -81,9 +81,19 @@ for l in range(len(wx_stations_name)):
     # get year range of dataset and loop through each year if these contain a full
     # 12-month water year
     yr_range = np.arange(dt_sql[1].year, datetime.now().year) # find min and max years
+    
+    # remove specific years in arrays due to issue with data quality in 'clean'
+    if wx_stations_name[l] == 'steph3':
+        yr_range = np.arange(int(yr_range[np.flatnonzero(yr_range == 2015)]),yr_range[-1])
+        
+    if wx_stations_name[l] == 'tetrahedron':
+        yr_range = np.arange(int(yr_range[np.flatnonzero(yr_range == 2016)])+1,yr_range[-1])
+        
+    if wx_stations_name[l] == 'mountcayley':
+        yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2022))
+        
     for k in range(len(yr_range)):
         print('## Cleaning data for year: %d-%d ##' %(yr_range[k],yr_range[k]+1))      
-     
         # calculate datetime for winter/summer and 12 months of that year
         # if exists (i.e. if there is a full 12 month water year (YYYY-10-01 to 
         # YYYY+1-09-30))

@@ -1,3 +1,9 @@
+##############################################################################
+# This code is now called 'SnowDepth_QAQC.py. Consider this one disused. Only
+# kept as a record in case something is changed in the new code. Delete in 
+# 1 month
+##############################################################################
+
 # This code attempts to QA/QC the snow depth data in a full year for all wx
 # stations and all years
 

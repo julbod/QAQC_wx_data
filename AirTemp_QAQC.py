@@ -15,6 +15,8 @@ import re
 from pathlib import Path
 from itertools import groupby
 import traceback
+from datetime import timedelta
+import copy
 
 # function to find nearest date 
 def nearest(items, pivot):
@@ -61,11 +63,23 @@ for l in range(len(wx_stations_name)):
     #%% import current data on SQL database and clean name of some columns to match
     # CSV column names
     sql_file = pd.read_sql(sql="SELECT * FROM clean_" + sql_database, con = engine)
-    
+        
+    # Fix issue with Datlamen and Rennell where time is not rounded to nearest
+    # hour which affects how the code below works
+    if wx_stations_name[l] == 'datlamen' or 'rennellpass':
+        df_dt = sql_file.set_index('DateTime') 
+        dt_sql = copy.deepcopy(sql_file['DateTime'])
+        dt_sql = pd.to_datetime(dt_sql)
+        for i in range(len(sql_file)):
+            dt_sql[i] = dt_sql[i].floor('H') # floor to nearest hour
+        
+        sql_file['DateTime'] = dt_sql
+    # identify any gaps data from the DateTime column
+    deltas = sql_file['DateTime'].diff()[1:]
+    gaps = deltas[deltas == timedelta(hours=0)]
+
     #%% Make sure there is no gap in datetime (all dates are consecutive) and place
     # nans in all other values if any gaps are identified
-    #deltas = sql_file['DateTime'].diff()[1:] # identify non-consecutive datetime
-    #gaps = deltas[deltas > timedelta(days=1)] # spits out any gaps > one day
     df_dt = pd.Series.to_frame(sql_file['DateTime'])    
     sql_file = sql_file.set_index('DateTime').asfreq('1H').reset_index()
     dt_sql = pd.to_datetime(sql_file['DateTime'])
@@ -86,11 +100,6 @@ for l in range(len(wx_stations_name)):
     
     if wx_stations_name[l] == 'machmell':
         yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2022))
-        
-    # round hours down in Datlamen for code below to work    
-    if wx_stations_name[l] == 'datlamen':
-        for i in range(len(dt_sql)):
-            dt_sql[i] = dt_sql[i].floor('H') # floor to nearest hour
         
     for k in range(len(yr_range)):
         print('## Cleaning data for year: %d-%d ##' %(yr_range[k],yr_range[k]+1)) 

@@ -81,6 +81,9 @@ for l in range(len(wx_stations_name)):
     yr_range = np.arange(dt_sql[1].year, datetime.now().year) # find min and max years
     
     # remove specific years in arrays due to issue with data quality in 'clean'
+    if wx_stations_name[l] == 'steph3':
+        yr_range = np.arange(int(yr_range[np.flatnonzero(yr_range == 2015)]),yr_range[-1])
+    
     if wx_stations_name[l] == 'machmell':
         yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2022))
         

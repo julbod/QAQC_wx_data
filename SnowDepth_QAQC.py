@@ -44,7 +44,6 @@ wx_stations = [w.replace('clean_steph3', 'clean_Stephanie3') for w in wx_station
 wx_stations = [x for x in wx_stations if not "steph" in x] # remove all stephanies
 wx_stations = [w.replace('clean_machmellkliniklini', 'clean_Machmellkliniklini') for w in wx_stations] # rename machmellkliniklini so it doesn't get cut out
 wx_stations = [x for x in wx_stations if not "machmell" in x] # remove machmell from list
-wx_stations = [x for x in wx_stations if not "rennellpass" in x] # remove rennell from list as snow depth is terrible
 wx_stations = [x for x in wx_stations if not "russell" in x] # remove rennell from list
 wx_stations = [w.replace('clean_Stephanie3', 'clean_steph3') for w in wx_stations] # rename steph3 back to original
 wx_stations = [w.replace('clean_Machmellkliniklini', 'clean_machmellkliniklini') for w in wx_stations] # rename machmellkliniklini back to original

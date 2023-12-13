@@ -17,12 +17,8 @@ from itertools import groupby
 import traceback
 
 #%% import support functions
-os.chdir('D:/GitHub/test')
+os.chdir('D:/GitHub/QAQC_wx_data')
 import qaqc_functions
-
-# function to find nearest date 
-def nearest(items, pivot):
-    return min(items, key=lambda x: abs(x - pivot))
 
 # remove chained assignmnent warning from Python - be careful!
 pd.set_option('mode.chained_assignment', None)
@@ -124,8 +120,8 @@ for l in range(len(wx_stations_name)):
             
             # find nearest date for both summer and winter compared to typical
             # year where winter starts YYYY-10-01 and summer ends YYYY+1-09-30
-            start_yr_sql = nearest(dt_sql, datetime(yr_range[k], 10, 1, 00, 00, 00))
-            end_yr_sql = nearest(dt_sql, datetime(yr_range[k+1], 9, 30, 23, 00, 00))
+            start_yr_sql = qaqc_functions.nearest(dt_sql, datetime(yr_range[k], 10, 1, 00, 00, 00))
+            end_yr_sql = qaqc_functions.nearest(dt_sql, datetime(yr_range[k+1], 9, 30, 23, 00, 00))
 
             # if the start of the winter for this dataset is not too different 
             # than the start of the winter for a typical year (i.e. YYYY-12-15), 
@@ -253,16 +249,8 @@ for l in range(len(wx_stations_name)):
         qaqc_arr[var] = qaqc_8
         
         #%% merge flags together
-        def merge_row(row):
-            if all(element == 0 for element in row):
-                return '0'
-            else:
-                non_zero_elements = [str(int(element)) for element in row if element != 0]
-                return ','.join(non_zero_elements)
-        
-        
         flags = pd.concat([flags_1,flags_2,flags_3,flags_4,flags_5,flags_6,flags_7,flags_8],axis=1)
-        qaqc_arr['sDepth_flag'] = flags.apply(merge_row, axis=1)
+        qaqc_arr['sDepth_flag'] = flags.apply(qaqc_functions.merge_row, axis=1)
         
         #%% exceptions below for specific manual fixes to data
         if wx_stations_name[l] == 'cainridgerun' and yr_range[k] == 2019:
@@ -290,12 +278,11 @@ for l in range(len(wx_stations_name)):
         plt.close()
         plt.clf()
         
-    #%% push to database
-    # FINISH THIS OFF TOMORROW TO PUSH DATA TO SQL EXCEPT FOR ONE COL (DATETIME)
-    if wx_stations_name[l] == 'apelake':
-        qaqc_watyr_limit = str(yr_range[-1]+1) # current water year
-        new_df = qaqc_arr[:int(np.flatnonzero(qaqc_arr['DateTime'] == '2023-10-01 00:00:00'))]
-        new_df.to_sql(name='qaqc_apelake', con=engine, if_exists = 'append', index=False)
+        #%% push to database
+        if wx_stations_name[l] == 'apelake':
+            qaqc_watyr_limit = str(yr_range[-1]+1) # current water year
+            new_df = qaqc_arr[:int(np.flatnonzero(qaqc_arr['DateTime'] == '2023-10-01 00:00:00'))]
+            new_df.to_sql(name='qaqc_apelake', con=engine, if_exists = 'append', index=False)
         
         #%% plot raw vs QA/QC with two subplots, one for data, oen for flags
 #        # prepare colormap for plotting flags

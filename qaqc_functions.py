@@ -197,9 +197,18 @@ def interpolate_qaqc(data_all, data_subset, flag, max_hours):
 
     return data_all, flag_arr
 
-#%%
+#%% merge individual arrays together and split by ',' if multiple integers in
+# one column
+def merge_row(row):
+    if all(element == 0 for element in row):
+        return '0'
+    else:
+        non_zero_elements = [str(int(element)) for element in row if element != 0]
+        return ','.join(non_zero_elements)
 
-
+#%% function to find nearest date
+def nearest(items, pivot):
+    return min(items, key=lambda x: abs(x - pivot))
 
 
 

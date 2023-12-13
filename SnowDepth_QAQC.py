@@ -16,6 +16,10 @@ from pathlib import Path
 from itertools import groupby
 import traceback
 
+#%% import support functions
+os.chdir('D:/GitHub/test')
+import qaqc_functions
+
 # function to find nearest date 
 def nearest(items, pivot):
     return min(items, key=lambda x: abs(x - pivot))
@@ -41,10 +45,15 @@ for i in range(len(wx_stations_lst)):
 wx_stations = [x for x in wx_stations if "clean" in x ]
 wx_stations = [x for x in wx_stations if not "legacy_ontree" in x] # remove legacy data for Cairnridgerun
 wx_stations = [w.replace('clean_steph3', 'clean_Stephanie3') for w in wx_stations] # rename steph3 so it doesn't get cut out
+wx_stations = [w.replace('clean_eastbuxton_archive', 'clean_temp') for w in wx_stations] # rename steph3 so it doesn't get cut out
+wx_stations = [x for x in wx_stations if not "clean_eastbuxton" in x] # remove machmell from list
+wx_stations = [w.replace('clean_temp', 'clean_eastbuxton') for w in wx_stations] # rename steph3 so it doesn't get cut out
 wx_stations = [x for x in wx_stations if not "steph" in x] # remove all stephanies
 wx_stations = [w.replace('clean_machmellkliniklini', 'clean_Machmellkliniklini') for w in wx_stations] # rename machmellkliniklini so it doesn't get cut out
 wx_stations = [x for x in wx_stations if not "machmell" in x] # remove machmell from list
-wx_stations = [x for x in wx_stations if not "russell" in x] # remove rennell from list
+wx_stations = [x for x in wx_stations if not "russell" in x] # remove russell from list
+wx_stations = [x for x in wx_stations if not "rennellpass" in x] # remove rennell from list
+wx_stations = [x for x in wx_stations if not "plummerhut" in x] # remove plummer from list
 wx_stations = [w.replace('clean_Stephanie3', 'clean_steph3') for w in wx_stations] # rename steph3 back to original
 wx_stations = [w.replace('clean_Machmellkliniklini', 'clean_machmellkliniklini') for w in wx_stations] # rename machmellkliniklini back to original
 wx_stations_name = list(map(lambda st: str.replace(st, 'clean_', ''), wx_stations)) # remove 'clean_' for csv export
@@ -58,8 +67,8 @@ for l in range(len(wx_stations_name)):
     print('###### Cleaning snow data for station: %s ######' %(sql_name))     
     
     # create new directory on Windows (if does not exist) and cd into it
-    Path("D:/Vancouver_Island_University/Wx_station/wx_data_processing/QAQC/individual_figures/" + sql_database + "/SnowDepth").mkdir(parents=True, exist_ok=True)
-    os.chdir("D:/Vancouver_Island_University/Wx_station/wx_data_processing/QAQC/individual_figures/" + sql_database + "/SnowDepth")
+    Path("D:/Vancouver_Island_University/Wx_station/wx_data_processing/QAQC/v2/individual_figures/" + sql_database + "/SnowDepth").mkdir(parents=True, exist_ok=True)
+    os.chdir("D:/Vancouver_Island_University/Wx_station/wx_data_processing/QAQC/v2/individual_figures/" + sql_database + "/SnowDepth")
     
     #%% import current data on SQL database and clean name of some columns to match
     # CSV column names
@@ -80,8 +89,11 @@ for l in range(len(wx_stations_name)):
     
     #%% Loop over all years of weather station data and apply a QA/QC routine
     # get year range of dataset and loop through each year if these contain a full
-    # 12-month water year
-    yr_range = np.arange(dt_sql[1].year, datetime.now().year) # find min and max years
+    # 12-month water year && make sure you only include the previous water year
+    if 10 <= datetime.now().month and datetime.now().month <= 12:
+        yr_range = np.arange(dt_sql[0].year, datetime.now().year) # find min and max years
+    else: 
+        yr_range = np.arange(dt_sql[0].year, datetime.now().year-1) # find min and max years
     
     # remove specific years in arrays due to issue with data quality in 'clean'
     if wx_stations_name[l] == 'steph3':
@@ -141,7 +153,7 @@ for l in range(len(wx_stations_name)):
             else:
                 print('Full summer/winter data for year: %d-%d is lacking - exiting loop' %(yr_range[k],yr_range[k]+1))
                 # write warning to csv for inventory
-                with open("D:/Vancouver_Island_University/Wx_station/wx_data_processing/QAQC/individual_figures/" + sql_database + "/SnowDepth/messages_" + sql_name + ".csv", 'a', newline='') as f_object:
+                with open("D:/Vancouver_Island_University/Wx_station/wx_data_processing/QAQC/v2/individual_figures/" + sql_database + "/SnowDepth/messages_" + sql_name + ".csv", 'a', newline='') as f_object:
                     writer_object = writer(f_object)
                     writer_object.writerow([sql_name + ' ' + var_name + ': no full summer/winter data - not QA/QCed for year:', yr_range[k],yr_range[k]+1])
                     f_object.close()
@@ -155,7 +167,7 @@ for l in range(len(wx_stations_name)):
             print('It appears that there is no snow depth data for year: %d-%d - exiting loop' %(yr_range[k],yr_range[k]+1))
             
             # write warning to csv for inventory
-            with open("D:/Vancouver_Island_University/Wx_station/wx_data_processing/QAQC/individual_figures/" + sql_database + "/SnowDepth/QAQC_issues_" + sql_name + ".csv", 'a', newline='') as f_object:
+            with open("D:/Vancouver_Island_University/Wx_station/wx_data_processing/QAQC/v2/individual_figures/" + sql_database + "/SnowDepth/QAQC_issues_" + sql_name + ".csv", 'a', newline='') as f_object:
                 writer_object = writer(f_object)
                 writer_object.writerow([sql_name + ' ' + var_name + ': lack of snow - not QA/QCed for year:', yr_range[k],yr_range[k]+1])
                 f_object.close()
@@ -174,221 +186,92 @@ for l in range(len(wx_stations_name)):
         
         # store for plotting
         raw = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        
+        qaqc_arr = sql_file.copy() # array to QAQC
+                
+        #%% find min value for specific interval (if needed)
+        #idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-07-21 06:00:00'))
+        #idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-09-30 23:00:00'))
+        #round(np.mean(qaqc_arr[var].iloc[idx_first:idx_last]),2)
+
         #%% Apply static range test (remove values where difference is > than value)
-        # Maximum value between each step: 2 cm
-        sql_step = 25 # in cm
-        data = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        
-        for i in range(len(data)-1):
-            if abs(data.iloc[i] - data.iloc[i-1]) > sql_step:
-                idx = data.index[i]
-                sql_file.loc[idx, var] = np.nan # place nans if diff is > 2 cm
-        
-        # plot static-test cleaned data
-        #fig = plt.figure()
-        #plt.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)])
-        #plt.title(sql_name + ' %s Static (%d cm) WTYR %d-%d' %(var_name,sql_step, yr_range[k],yr_range[k]+1))
-        #plt.close()
-        #plt.show()
-        
-        # store for plotting
-        step_test = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 1
+        step_size = 25 # in cm
+        qaqc_1, flags_1 = qaqc_functions.static_range_test(qaqc_arr[var], data, flag, step_size)
+        qaqc_arr[var] = qaqc_1
+
         #%% Remove all negative values (non-sensical)
-        zeroes = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        for i in range(len(zeroes)-1):
-            if zeroes.iloc[i] < 0:
-                idx = zeroes.index[i]
-                sql_file.loc[idx, var] = 0 # place zeros if negative values found
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 2
+        qaqc_2, flags_2 = qaqc_functions.negtozero(qaqc_arr[var], data, flag)
+        qaqc_arr[var] = qaqc_2
     
         #%% Remove duplicate consecutive values
-        data = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        for i in range(len(data)-1):
-            if abs(data.iloc[i] - data.iloc[i-1]) == 0:
-                idx = data.index[i]
-                sql_file.loc[idx, var] = np.nan # place nans if duplicates found
-        
-        # plot duplicates-cleaned data
-        #fig = plt.figure()
-        #plt.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)])
-        #plt.title(sql_name + ' %s Duplicate WTYR %d-%d' %(var_name,yr_range[k],yr_range[k]+1))
-        #plt.close()
-        #plt.show()
-        
-        # store for plotting
-        duplicates = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 3
+        qaqc_3, flags_3 = qaqc_functions.duplicates(qaqc_arr[var], data, flag)
+        qaqc_arr[var] = qaqc_3
+
         #%% Remove outliers based on mean and std using a rolling window for each
-        # month of the year
-        # make sure you take into account leap years and months with 30/31 days
-        # find first the indices for each month in the array
-        for i in range(1,12):
-            # months with 30 days
-            try:
-                dt_mth = np.concatenate(([np.where(dt_sql == np.datetime64(datetime(2022, i, 1, 00, 00, 00))), np.where(dt_sql == np.datetime64(datetime(2022, i, 30, 00, 00, 00)))]))
-            except:
-                pass
-            # months with 31 days
-            try:        
-                dt_mth = np.concatenate(([np.where(dt_sql == np.datetime64(datetime(2022, i, 1, 00, 00, 00))), np.where(dt_sql == np.datetime64(datetime(2022, i, 31, 00, 00, 00)))]))
-            except:
-                pass
-            # leap years with 29 days in February
-            try:
-                dt_mth = np.concatenate(([np.where(dt_sql == np.datetime64(datetime(2022, i, 1, 00, 00, 00))), np.where(dt_sql == np.datetime64(datetime(2022, i, 29, 00, 00, 00)))]))
-            except:
-                pass
-            # non-leap years with 28 days in February
-            try:
-                dt_mth = np.concatenate(([np.where(dt_sql == np.datetime64(datetime(2022, i, 1, 00, 00, 00))), np.where(dt_sql == np.datetime64(datetime(2022, i, 28, 00, 00, 00)))]))
-            except:
-                pass
-            
-            # then, remove outliers if they are greater than the monthly mean + 
-            # 1.5x the standard deviation
-            data_mth = sql_file[var].iloc[np.arange(dt_mth[0].item(),dt_mth[1].item()+1)]
-            outliers = data_mth[data_mth > data_mth.mean() + 1.5*(data_mth.std())]
-            sql_file.loc[outliers.index, var] = np.nan # place nans if outliers
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 4
+        st_dev = 4 # specify how many times you want to multiple st_dev (good starting point is 3; 1 is too harsh) 
+        qaqc_4, flags_4 = qaqc_functions.mean_rolling_month_window(qaqc_arr[var], flag, dt_sql, st_dev)
+        qaqc_arr[var] = qaqc_4
         
-        # plot outliers-cleaned data
-        #fig = plt.figure()
-        #plt.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)])
-        #plt.title(sql_name + ' %s Rolling Mean WTYR %d-%d' %(var_name,yr_range[k],yr_range[k]+1))
-        #plt.close()
-        #plt.show()
-        
-        # store for plotting
-        outliers_first = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-                
         #%% Remove any last outliers using sliding window of 20 samples and 
         # calculating the difference between the value at [i] and the mean of 
         # sliding window which should not exceed a specific value
-        # Maximum value between each step: 25 cm
-        value_exceeded = 30 # in cm
-        
-        data = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        idx_exist = (data.iloc[:].loc[data.isnull()==False].index.tolist()) # indices of existing values
-        max_outliers = data[idx_exist] # only keep non-nan values
-        
-        # first apply window for i to i - 50
-        for i in range(len(max_outliers)-20):
-            window = max_outliers[i:i+20]
-            if abs(max_outliers.iloc[i] - window.mean()) > value_exceeded:
-                idx = max_outliers.index[i]
-                sql_file.loc[idx, var] = np.nan # place nans if outliers
-    
-        # then apply window for i+50 to i to get remaining outliers    
-        for i in range(20,len(max_outliers)):
-            window = max_outliers[i-20:i]
-            if abs(max_outliers.iloc[i] - window.mean()) > value_exceeded:
-                idx = max_outliers.index[i]
-                sql_file.loc[idx, var] = np.nan # place nans if outliers
-                
-        # plot remaining outliers-cleaned data
-        #fig = plt.figure()
-        #plt.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)])
-        #plt.title(sql_name + ' %s Sliding Window %d WTYR %d-%d' %(var_name,value_exceeded,yr_range[k],yr_range[k]+1))
-        #plt.close()
-        #plt.show()
-        
-        # store for plotting
-        outliers_last = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        
+        # Maximum value between each step: 30 cm
+        flag = 5
+        mean_sliding_val = 30 # in cm
+        window_len = 20 # previously 20
+        qaqc_5, flags_5 = qaqc_functions.mean_sliding_window(qaqc_arr[var], data, flag, window_len, mean_sliding_val)
+        qaqc_arr[var] = qaqc_5
+               
         #%% Remove non-sensical non-zero values in summer for Snow Depth
-        # Find all values below threshold, then find the longest consecutive 
-        # list of these values (e.g. summer months) and replace them by 0
-        # These values are all likely wrong and correspond to sensor drift,
-        # vegetation change, site visits, etc.
-        data = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        data_summer = sql_file[var].iloc[np.arange(dt_summer_yr[0].item(),dt_summer_yr[1].item()+1)]
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 6
+        summer_threshold = 12
+        qaqc_6, flags_6 = qaqc_functions.sdepth_summer_zeroing(qaqc_arr[var], data, flag, dt_yr, dt_summer_yr, summer_threshold, qaqc_arr['DateTime'], wx_stations_name[l], yr_range[k]+1)
+        qaqc_arr[var] = qaqc_6
         
-        # calculate a maximum acceptable threshold - either mean value in summer 
-        # months or if this is too small, a specific value (suggested to be 
-        # 12 cm) based on eyeballing of the data in other wx stations or years
-        mean_value_summer = np.mean(data_summer)
-        arbitrary_value = 12
-        threshold = mean_value_summer > arbitrary_value # check whichever is >
-        
-        if threshold == True: # if mean is bigger, then use this as threshold
-            data_bool = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)] < mean_value_summer
-            
-        else: # else if mean is smaller, then use arbitrary value as threshold
-            data_bool = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)] < arbitrary_value
-        data_bool = data_bool.replace({True:1, False:0})
-        data_bool[data[data.isnull()].index] = 1 # replace nans with 1
-        
-        # find index of longest sequence, making sure you're not picking up
-        # a longer sequence at the start of the timeseries (e.g. in early winter)
-        # hence the "data_bool.iloc[0:round(len(data)/2)]"
-        # which is used arbitrarily so that it does not pick up indices earlier than
-        # Spring onwards
-        data_bool.iloc[0:round(len(data)/2)] = 0
-        idx_longest_sequence = data_bool.index[max(((lambda y: (y[0][0], len(y)))(list(g)) for k, g in groupby(enumerate(data_bool==1), lambda x: x[1]) if k), key=lambda z: z[1])[0]]
-        sql_file[var].iloc[np.arange(idx_longest_sequence,dt_yr[1].item()+1)] = 0
-        
-        # store for plotting
-        summer_zeroing = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-
         #%% one more pass to correct remaining outliers using the step size
         # and different levels until it's all 'shaved off'
-        sql_steps = [20,15,10,5] # in cm
-        for h in range(len(sql_steps)):
-            sql_step = sql_steps[h] # in cm
-            data = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-            idx_exist = (data.iloc[:].loc[data.isnull()==False].index.tolist()) # indices of existing values
-            data = data[idx_exist]
-            
-            for i in range(len(data)-1):
-                if abs(data[data.index[i]] - data[data.index[i-1]]) > sql_step:
-                    idx = data.index[i]
-                    sql_file.loc[idx, var] = np.nan # place nans if diff is > 2 cm
-            
-        # plot static-test cleaned data
-        #fig = plt.figure()
-        #plt.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)])
-        #plt.title(sql_name + ' %s Static (%d cm) WTYR %d-%d' %(var_name,sql_step, yr_range[k],yr_range[k]+1))
-        #plt.close()
-        #plt.show()
-            
-        # store for plotting
-        pre_interpolation = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        
-        #%% Find consecutive nans to see how much you could interpolate
-        pre_interp_bool = np.isnan(pre_interpolation)
-        pre_interp_bool = pre_interp_bool.replace({True:1, False:0})
-        
-        idxs = np.flatnonzero(pre_interp_bool) # get indices of non zero elements
-        idxs = pre_interpolation.index[0] + idxs # add index in reference to array
-        values = pre_interp_bool[idxs]
-        counts = np.diff(idxs, append=len(pre_interp_bool))  
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 7
+        step_sizes = [20,15,10,5] # in cm
+        qaqc_7, flags_7 = qaqc_functions.static_range_multiple(qaqc_arr[var], data, flag, step_sizes)
+        qaqc_arr[var] = qaqc_7
         
         #%% Interpolate nans with method='linear' using pandas.DataFrame.interpolate
         # First, identify gaps larger than 3 hours (which should not be interpolated)
-        df = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        #max_hours = 168 # 7 days
-        max_hours = 3 # 3 hours
-        mask = df.isna()
-        mask = (mask.groupby((mask != mask.shift()).cumsum()).transform(lambda x: len(x) > max_hours)* mask)
-        #print(len([i for i, x in enumerate(mask) if x])) # get length of gaps > 48 hrs
-    
-        #index = dt_yr[0].item() + np.where(sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)].isnull())[0] # find indices of nans in reduced array
-        index = df[np.logical_or(mask == 0, df == np.nan)].index
-        interpolated = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)].interpolate() # interpolate all nans
-        sql_file.loc[index, var] = interpolated[index] # place newly interpolated values into the master array
-    
-        # plot final interpolated and QA/QC-ed data and save to file
-        #fig = plt.figure()
-        #plt.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)])
-        #plt.title(sql_name + ' %s Interpolated QA-QC WTYR %d-%d' %(var_name, yr_range[k],yr_range[k]+1))
-        #plt.savefig('%d_%s %s QA-QC Interpolated WTYR %d-%d.png' %(k,sql_name,var_name_short,yr_range[k],yr_range[k]+1), dpi=400)
-        #plt.close()
-        #plt.clf()
-        #plt.show() 
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 8
+        max_hours = 3
+        qaqc_8, flags_8 = qaqc_functions.interpolate_qaqc(qaqc_arr[var], data, flag, max_hours)
+        qaqc_arr[var] = qaqc_8
         
-        # store for plotting
-        interpolated = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        #%% merge flags together
+        def merge_row(row):
+            if all(element == 0 for element in row):
+                return '0'
+            else:
+                non_zero_elements = [str(int(element)) for element in row if element != 0]
+                return ','.join(non_zero_elements)
         
+        
+        flags = pd.concat([flags_1,flags_2,flags_3,flags_4,flags_5,flags_6,flags_7,flags_8],axis=1)
+        qaqc_arr['sDepth_flag'] = flags.apply(merge_row, axis=1)
+        
+        #%% exceptions below for specific manual fixes to data
+        if wx_stations_name[l] == 'cainridgerun' and yr_range[k] == 2019:
+            idx_err = int(np.flatnonzero(qaqc_arr['DateTime'] == '2020-02-21 03:00:00'))
+            qaqc_arr[var].iloc[idx_err:dt_yr[1].item()+1] = np.nan
+            qaqc_7.iloc[idx_err:dt_yr[1].item()+1] = np.nan
+            qaqc_8.iloc[idx_err:dt_yr[1].item()+1] = np.nan
+            qaqc_arr['Snow_Depth_Flags'].iloc[idx_err:dt_yr[1].item()+1] = 1
+
         #%% plot raw vs QA/QC
         fig, ax = plt.subplots()
         #ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],raw, '#1f77b4',marker='o') # blue
@@ -397,49 +280,43 @@ for l in range(len(wx_stations_name)):
         #ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],outliers_last, '#d62728',marker='o') # red
         #ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],interpolated,'#77b41f', marker='o') # green
         
-        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],raw, '#1f77b4') # blue
-        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],interpolated, '#d62728')
-        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],pre_interpolation, '#ff7f0e')
-        #plt.show()
+        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],raw, '#1f77b4', linewidth=1) # blue
+        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#d62728', linewidth=1)
+        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_7.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
+        #ax.scatter(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],flags_int[dt_yr[0].item():dt_yr[1].item()+1], s=3, c=flags_int[dt_yr[0].item():dt_yr[1].item()+1], cmap='seismic')
+        
         plt.title(sql_name + ' %s QA-QC WTYR %d-%d' %(var_name, yr_range[k],yr_range[k]+1))
         plt.savefig('%s %s Final Comparison WTYR %d-%d.png' %(sql_name,var_name_short,yr_range[k],yr_range[k]+1), dpi=400)
         plt.close()
         plt.clf()
         
-    # %% to save to MySQL database
-    
-    # =============================================================================
-    # # calculate water year (new year starts on 10.01.YYYY). If months are 
-    # # before October, do nothing. Else add +1
-    # WatYrs = []
-    # for i in range(len(dt_sql)):
-    #     if int(str(dt_sql.iloc[i]).split('-')[1]) < 10:
-    #         WatYr = int(str(dt_sql.iloc[i]).split('-')[0])
-    #     else:
-    #         WatYr = int(str(dt_sql.iloc[i]).split('-')[0])+1
-    #     WatYrs.append(WatYr)  
-    #     
-    # # create dataframe with rows to export to sql database
-    # new_df = pd.DataFrame({'DateTime': dt_sql,
-    #             'WatYr':WatYrs,
-    #             'Air_Temp':sql_file['Temp'].astype(float),
-    #             'RH':sql_file['RH'].astype(float),
-    #             'BP':(sql_file['BP']/10).astype(float), # convert from hpa to kpa
-    #             'Wind_speed':sql_file['Wspd'].astype(float),
-    #             'Wind_Dir':sql_file['Dir'].astype(float),
-    #             'Pk_Wind_Speed':sql_file['Mx_Spd'].astype(float), 
-    #             'Pk_Wind_Dir':sql_file['Mx_Dir'],
-    #             'PC_Tipper':sql_file['RnTotal'],
-    #             'PP_Tipper':sql_file['Rn_1'].astype(float),
-    #             'PC_Raw_Pipe':sql_file['PC'].astype(float),
-    #             'Snow_Depth':sql_file['SDepth'].astype(float),
-    #             'SWE':sql_file['SW'].astype(float),
-    #             'Soil_Temperature':sql_file['ST'].astype(float),
-    #             'Soil_Moisture':sql_file['SM'],
-    #             'Solar_Rad':sql_file['PYR'].astype(float),
-    #             'Batt':sql_file['Vtx'].astype(float),
-    #             })
-    # 
-    # # push to database
-    # #new_df.to_sql(name='filtered_tetrahedron', con=engine, if_exists = 'append', index=False)
-    # =============================================================================
+    #%% push to database
+    # FINISH THIS OFF TOMORROW TO PUSH DATA TO SQL EXCEPT FOR ONE COL (DATETIME)
+    if wx_stations_name[l] == 'apelake':
+        qaqc_watyr_limit = str(yr_range[-1]+1) # current water year
+        new_df = qaqc_arr[:int(np.flatnonzero(qaqc_arr['DateTime'] == '2023-10-01 00:00:00'))]
+        new_df.to_sql(name='qaqc_apelake', con=engine, if_exists = 'append', index=False)
+        
+        #%% plot raw vs QA/QC with two subplots, one for data, oen for flags
+#        # prepare colormap for plotting flags
+#        flags_int = [int(x.replace(',','')[0]) for x in qaqc_arr['sDepth_flag']] # just keep first flag if there are multiple
+#        categories = flags_int
+#        colormap = np.array(['r', 'g', 'b'])
+        
+#        f, (ax0, ax1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
+#        
+#        # plot raw and qaqced data
+#        ax0.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],raw, '#1f77b4') # blue
+#        ax0.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#d62728')
+#        ax0.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_7.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e')
+#        
+#        # plot the flags and add colormap to each value in each points
+#        ax1.scatter(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],flags_int[dt_yr[0].item():dt_yr[1].item()+1], s=3, c=flags_int[dt_yr[0].item():dt_yr[1].item()+1], cmap='seismic')
+#        from matplotlib.cm import ScalarMappable
+#        norm = plt.Normalize(np.min(flags_int[dt_yr[0].item():dt_yr[1].item()+1]), np.max(flags_int[dt_yr[0].item():dt_yr[1].item()+1]))
+#        sm = ScalarMappable(cmap='seismic', norm=norm)
+#        sm.set_array([])
+#        
+#        # Connect points with lines and use the same colormap
+#        for i in range(len(flags_int[dt_yr[0].item():dt_yr[1].item()+1]) - 1):
+#            ax1.plot([sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)][i],sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)][i+1]],[flags_int[dt_yr[0].item():dt_yr[1].item()+1][i],flags_int[dt_yr[0].item():dt_yr[1].item()+1][i+1]],color=sm.to_rgba(flags_int[dt_yr[0].item():dt_yr[1].item()+1][i]))

@@ -2,10 +2,8 @@
 # data, irrespective of wx station or wx variable
 
 #%% Import functions
-import os
 import pandas as pd 
 import numpy as np
-from datetime import datetime
 from itertools import groupby
 
 #%% Static range test (result: FAIL if TRUE)

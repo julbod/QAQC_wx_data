@@ -1,12 +1,14 @@
 #%% This code creates an SQL database for each qaqc wx station databases
-# all databases are by default filled with nans
+# all databases are by default filled with nans. The code also assigns the primary
+# column in each newly created SQL dabase to DateTime
+
 # Written by Julien Bodart (VIU) - 12/13/2023
 
-import os
 import pandas as pd 
 from sqlalchemy import create_engine
 import numpy as np
 import re
+import copy
 
 #%% Establish a connection with MySQL database 'viuhydro_wx_data_v2'
 engine = create_engine('mysql+mysqlconnector://viuhydro_shiny:.rt_BKD_SB*Q@192.99.62.147:3306/viuhydro_wx_data_v2', echo = False)
@@ -49,7 +51,18 @@ for l in range(len(wx_stations_name)):
     #%% import current data on SQL database and clean name of some columns to match
     # CSV column names
     sql_file = pd.read_sql(sql="SELECT * FROM clean_" + sql_database, con = engine)
-    sql_file = sql_file.set_index('DateTime').asfreq('1H').reset_index()
+    sql_file = sql_file.set_index('DateTime').asfreq('1H').reset_index() # make sure records are continuous every hour
+
+    # Fix issue with Datlamen and Rennell where time is not rounded to nearest
+    # hour which affects how the code below works
+    if wx_stations_name[l] == 'datlamen' or 'rennellpass':
+        df_dt = sql_file.set_index('DateTime') 
+        dt_sql = copy.deepcopy(sql_file['DateTime'])
+        dt_sql = pd.to_datetime(dt_sql)
+        for i in range(len(sql_file)):
+            dt_sql[i] = dt_sql[i].floor('H') # floor to nearest hour
+            
+        sql_file['DateTime'] = dt_sql
     
     #%% only keep data from oldest to last water year
     new_df = sql_file[:int(np.flatnonzero(sql_file['DateTime'] == '2023-10-01 00:00:00'))]
@@ -74,56 +87,11 @@ for l in range(len(wx_stations_name)):
     # import database to SQL
     df_full.to_sql(name='qaqc_%s' %wx_stations_name[l], con=engine, if_exists = 'fail', index=False)
     
-    #%% alternatively, create sql file that can be manually imported into 
-    # phpMyAdmin (started process but above is much more efficient)
-    # table_name = 'qaqc_' + wx_stations_name[l]
-    
-    # sql_file_text = '''/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-    # /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-    # /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-    # /*!40101 SET NAMES utf8mb4 */;
-    
-    # --
-    # -- Database: `viuhydro_wx_data_v2`
-    # --
-    
-    # -- --------------------------------------------------------
-    
-    # --
-    # -- Table structure for table `%s`
-    # --
-    
-    # CREATE TABLE : '%s' (
-    #   `DateTime` datetime NOT NULL,
-    #   `WatYr` int(11) NOT NULL,
-    #   `Air_Temp` float DEFAULT NULL,
-    #   `RH` float DEFAULT NULL,
-    #   `BP` float DEFAULT NULL,
-    #   `Wind_Speed` float DEFAULT NULL,
-    #   `Wind_Dir` float DEFAULT NULL,
-    #   `Pk_Wind_Speed` float DEFAULT NULL,
-    #   `Pk_Wind_Dir` float DEFAULT NULL,
-    #   `PC_Tipper` float DEFAULT NULL,
-    #   `PP_Tipper` float DEFAULT NULL,
-    #   `PC_Raw_Pipe` float DEFAULT NULL,
-    #   `PP_Pipe` float DEFAULT NULL,
-    #   `Snow_Depth` float DEFAULT NULL,
-    #   `SWE` float DEFAULT NULL,
-    #   `Solar_Rad` float DEFAULT NULL,
-    #   `SWU` float DEFAULT NULL,
-    #   `SWL` float DEFAULT NULL,
-    #   `LWU` float DEFAULT NULL,
-    #   `LWL` float DEFAULT NULL,
-    #   `Lysimeter` float DEFAULT NULL,
-    #   `Soil_Moisture` float DEFAULT NULL,
-    #   `Soil_Temperature` float NOT NULL,
-    #   `Batt` float DEFAULT NULL
-    # ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+#%% make sure you assign 'DateTime' column as the primary column
+for l in range(len(wx_stations_name)):
+    print('## Assigning DateTime column as the primary column for station: %s ##' %(wx_stations_name[l]))     
+    engine = create_engine('mysql+mysqlconnector://viuhydro_shiny:.rt_BKD_SB*Q@192.99.62.147:3306/viuhydro_wx_data_v2', echo = False)
+    with engine.connect() as con:
+        con.execute('ALTER TABLE `qaqc_%s`' %wx_stations_name[l] + ' ADD PRIMARY KEY (`DateTime`);')
 
-    # --
-    # -- Dumping data for table `qaqc_apelake`
-    # --
-    
-    # INSERT INTO `%s` (`DateTime`, `WatYr`, `Air_Temp`, `RH`, `BP`, `Wind_Speed`, `Wind_Dir`, `Pk_Wind_Speed`, `Pk_Wind_Dir`, `PC_Tipper`, `PP_Tipper`, `PC_Raw_Pipe`, `PP_Pipe`, `Snow_Depth`, `SWE`, `Solar_Rad`, `SWU`, `SWL`, `LWU`, `LWL`, `Lysimeter`, `Soil_Moisture`, `Soil_Temperature`, `Batt`) VALUES
-    # (''' %(table_name,table_name,table_name)
-    #%%
+#%%

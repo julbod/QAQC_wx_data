@@ -94,14 +94,17 @@ for l in range(len(wx_stations_name)):
     
     # remove specific years in arrays due to issue with data quality in 'clean'
     if wx_stations_name[l] == 'steph3':
-        yr_range = np.arange(int(yr_range[np.flatnonzero(yr_range == 2015)]),yr_range[-1])
+        yr_range = np.arange(int(yr_range[np.flatnonzero(yr_range == 2015)]),yr_range[-1]+1)
         
     if wx_stations_name[l] == 'tetrahedron':
-        yr_range = np.arange(int(yr_range[np.flatnonzero(yr_range == 2016)])+1,yr_range[-1])
+        yr_range = np.arange(int(yr_range[np.flatnonzero(yr_range == 2016)])+1,yr_range[-1]+1)
         
     if wx_stations_name[l] == 'mountcayley':
         yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2022))
         
+    flags_arr_final = sql_file['WatYr'].copy().rename("Snow_Depth_flags")
+    qaqc_arr_final = pd.concat([sql_file.copy(),flags_arr_final],axis=1) # for export to qaqc SQL db
+    
     for k in range(len(yr_range)):
         print('## Cleaning data for year: %d-%d ##' %(yr_range[k],yr_range[k]+1))      
         # calculate datetime for winter/summer and 12 months of that year
@@ -177,8 +180,8 @@ for l in range(len(wx_stations_name)):
         qaqc_arr = sql_file.copy() # array to QAQC
                 
         #%% find min value for specific interval (if needed)
-        #idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-07-21 06:00:00'))
-        #idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-09-30 23:00:00'))
+        #idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2019-10-01 00:00:00'))
+        #idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2019-10-14 17:00:00'))
         #round(np.mean(qaqc_arr[var].iloc[idx_first:idx_last]),2)
 
         #%% Apply static range test (remove values where difference is > than value)
@@ -211,11 +214,11 @@ for l in range(len(wx_stations_name)):
         # calculating the difference between the value at [i] and the mean of 
         # sliding window which should not exceed a specific value
         # Maximum value between each step: 30 cm
-        flag = 5
-        mean_sliding_val = 30 # in cm
-        window_len = 20 # previously 20
-        qaqc_5, flags_5 = qaqc_functions.mean_sliding_window(qaqc_arr[var], data, flag, window_len, mean_sliding_val)
-        qaqc_arr[var] = qaqc_5
+        #flag = 5
+        #mean_sliding_val = 30 # in cm
+        #window_len = 20 # previously 20
+        #qaqc_5, flags_5 = qaqc_functions.mean_sliding_window(qaqc_arr[var], data, flag, window_len, mean_sliding_val)
+        #qaqc_arr[var] = qaqc_5
                
         #%% Remove non-sensical non-zero values in summer for Snow Depth
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
@@ -242,7 +245,8 @@ for l in range(len(wx_stations_name)):
         
         #%% merge flags together into large array, with comma separating multiple
         # flags for each row if these exist
-        flags = pd.concat([flags_1,flags_2,flags_3,flags_4,flags_5,flags_6,flags_7,flags_8],axis=1)
+        #flags = pd.concat([flags_1,flags_2,flags_3,flags_4,flags_5,flags_6,flags_7,flags_8],axis=1)
+        flags = pd.concat([flags_1,flags_2,flags_3,flags_4,flags_6,flags_7,flags_8],axis=1)
         qaqc_arr['Snow_Depth_flags'] = flags.apply(qaqc_functions.merge_row, axis=1)
         
         # for simplicity, if flag contains flag 6 amongst other flags in one row,
@@ -263,38 +267,47 @@ for l in range(len(wx_stations_name)):
         fig, ax = plt.subplots()
         
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],raw, '#1f77b4', linewidth=1) # blue
-        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#d62728', linewidth=1)
+        #ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#d62728', linewidth=1)
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_7.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
         
         plt.title(sql_name + ' %s QA-QC WTYR %d-%d' %(var_name, yr_range[k],yr_range[k]+1))
         plt.savefig('%s %s Final Comparison WTYR %d-%d.png' %(sql_name,var_name_short,yr_range[k],yr_range[k]+1), dpi=400)
         plt.close()
         plt.clf()
-        
-    #%% push qaqced variable to SQL database
-    print('# Writing newly qaqced data to SQL database #')     
-    sql_qaqc_name = 'qaqc_' + wx_stations_name[l]
-    qaqc_sDepth = pd.concat([qaqc_arr['DateTime'],qaqc_arr['Snow_Depth'],qaqc_arr['Snow_Depth_flags']],axis=1)
-    qaqc_sDepth = qaqc_sDepth[:int(np.flatnonzero(qaqc_sDepth['DateTime'] == '2023-10-01 00:00:00'))] # exclude records from current water year
 
-    # import current qaqc sql db and find columns matching the qaqc variable here
-    existing_qaqc_sql = pd.read_sql('SELECT * FROM %s' %sql_qaqc_name, engine)
-    colnames = existing_qaqc_sql.columns
-    col_positions = [i for i, s in enumerate(colnames) if var in s]
-    
-    # push newly qaqced variable to SQL database -
-    # warn if length of existing qaqc sql datbase is not the same as the 
-    # qaqc variable from this code (this shouldn't happen in theory, but 
-    # better be safe than sorry)
-    if len(existing_qaqc_sql) != len(qaqc_sDepth):
-        #raise Exception('Careful: lengths between existing qaqc array and new qaqc var do not match!') # Don't! If you catch, likely to hide bugs.
-        # skip to next iteration if error found
-        print('>>>>>>> Length difference between SQL and qaqced variable - not writing to SQL databse! <<<<<<<')  
+    #%% push qaqced variable to SQL database
+    # as above, skip iteration if all snow depth is null (e.g. Datlamen)
+    if sql_file[var].isnull().all() or dt_yr.size == 0:
         continue
+    # otherwise, if data (most stations), keep running
     else:
-        # move the qaqc columns into the appropriate columns in existing qaqc sql database
-        existing_qaqc_sql[colnames[col_positions]] = pd.concat([qaqc_arr['Snow_Depth'],qaqc_arr['Snow_Depth_flags']],axis=1)
-        existing_qaqc_sql.to_sql(name='%s' %sql_qaqc_name, con=engine, if_exists = 'replace', index=False)
+        print('# Writing newly qaqced data to SQL database #')     
+        sql_qaqc_name = 'qaqc_' + wx_stations_name[l]
+        qaqc_sDepth = pd.concat([qaqc_arr_final['DateTime'],qaqc_arr_final['Snow_Depth'],qaqc_arr_final['Snow_Depth_flags']],axis=1)
+        qaqc_sDepth = qaqc_sDepth[:int(np.flatnonzero(qaqc_sDepth['DateTime'] == '2023-10-01 00:00:00'))] # exclude records from current water year
+    
+        # import current qaqc sql db and find columns matching the qaqc variable here
+        existing_qaqc_sql = pd.read_sql('SELECT * FROM %s' %sql_qaqc_name, engine)
+        colnames = existing_qaqc_sql.columns
+        col_positions = [i for i, s in enumerate(colnames) if var in s]
+        
+        # push newly qaqced variable to SQL database -
+        # warn if length of existing qaqc sql datbase is not the same as the 
+        # qaqc variable from this code (this shouldn't happen in theory, but 
+        # better be safe than sorry)
+        if len(existing_qaqc_sql) != len(qaqc_sDepth):
+            #raise Exception('Careful: lengths between existing qaqc array and new qaqc var do not match!') # Don't! If you catch, likely to hide bugs.
+            # skip to next iteration if error found
+            print('>>>>>>> Length difference between SQL and qaqced variable - not writing to SQL databse! <<<<<<<')  
+            continue
+        else:
+            # move the qaqc columns into the appropriate columns in existing qaqc sql database
+            existing_qaqc_sql[colnames[col_positions]] = pd.concat([qaqc_arr['Snow_Depth'],qaqc_arr['Snow_Depth_flags']],axis=1)
+            existing_qaqc_sql.to_sql(name='%s' %sql_qaqc_name, con=engine, if_exists = 'replace', index=False)
+            
+            # make sure you assign 'DateTime' column as the primary column
+            with engine.connect() as con:
+                    con.execute('ALTER TABLE `qaqc_%s`' %wx_stations_name[l] + ' ADD PRIMARY KEY (`DateTime`);')
                     
         #%% plot raw vs QA/QC with two subplots, one for data, oen for flags
 #        # prepare colormap for plotting flags

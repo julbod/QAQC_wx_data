@@ -301,7 +301,7 @@ for l in range(len(wx_stations_name)):
         if len(existing_qaqc_sql) != len(qaqc_sDepth):
             #raise Exception('Careful: lengths between existing qaqc array and new qaqc var do not match!') # Don't! If you catch, likely to hide bugs.
             # skip to next iteration if error found
-            print('>>>>>>> Length difference between SQL and qaqced variable - not writing to SQL databse! <<<<<<<')  
+            print('>>> Length difference between SQL and qaqced variable - not writing to SQL database! >>>')  
             continue
         else:
             # move the qaqc columns into the appropriate columns in existing qaqc sql database

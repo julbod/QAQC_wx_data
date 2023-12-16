@@ -274,6 +274,9 @@ for l in range(len(wx_stations_name)):
         plt.savefig('%s %s Final Comparison WTYR %d-%d.png' %(sql_name,var_name_short,yr_range[k],yr_range[k]+1), dpi=400)
         plt.close()
         plt.clf()
+        
+        #%% append to qaqc_arr_final after every k iteration
+        qaqc_arr_final.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)] = qaqc_arr.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
 
     #%% push qaqced variable to SQL database
     # as above, skip iteration if all snow depth is null (e.g. Datlamen)

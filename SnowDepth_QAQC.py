@@ -102,8 +102,7 @@ for l in range(len(wx_stations_name)):
     if wx_stations_name[l] == 'mountcayley':
         yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2022))
         
-    flags_arr_final = sql_file['WatYr'].copy().rename("Snow_Depth_flags")
-    qaqc_arr_final = pd.concat([sql_file.copy(),flags_arr_final],axis=1) # for export to qaqc SQL db
+    qaqc_arr_final = []
     
     for k in range(len(yr_range)):
         print('## Cleaning data for year: %d-%d ##' %(yr_range[k],yr_range[k]+1))      
@@ -267,7 +266,7 @@ for l in range(len(wx_stations_name)):
         fig, ax = plt.subplots()
         
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],raw, '#1f77b4', linewidth=1) # blue
-        #ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#d62728', linewidth=1)
+        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#d62728', linewidth=1)
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_7.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
         
         plt.title(sql_name + ' %s QA-QC WTYR %d-%d' %(var_name, yr_range[k],yr_range[k]+1))
@@ -276,7 +275,7 @@ for l in range(len(wx_stations_name)):
         plt.clf()
         
         #%% append to qaqc_arr_final after every k iteration
-        qaqc_arr_final.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)] = qaqc_arr.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        qaqc_arr_final.append(qaqc_arr.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)])
 
     #%% push qaqced variable to SQL database
     # as above, skip iteration if all snow depth is null (e.g. Datlamen)
@@ -284,10 +283,10 @@ for l in range(len(wx_stations_name)):
         continue
     # otherwise, if data (most stations), keep running
     else:
-        print('# Writing newly qaqced data to SQL database #')     
+        print('# Writing newly qaqced data to SQL database #') 
+        qaqc_arr_final = pd.concat(qaqc_arr_final) # concatenate lists
         sql_qaqc_name = 'qaqc_' + wx_stations_name[l]
         qaqc_sDepth = pd.concat([qaqc_arr_final['DateTime'],qaqc_arr_final['Snow_Depth'],qaqc_arr_final['Snow_Depth_flags']],axis=1)
-        qaqc_sDepth = qaqc_sDepth[:int(np.flatnonzero(qaqc_sDepth['DateTime'] == '2023-10-01 00:00:00'))] # exclude records from current water year
     
         # import current qaqc sql db and find columns matching the qaqc variable here
         existing_qaqc_sql = pd.read_sql('SELECT * FROM %s' %sql_qaqc_name, engine)
@@ -305,7 +304,7 @@ for l in range(len(wx_stations_name)):
             continue
         else:
             # move the qaqc columns into the appropriate columns in existing qaqc sql database
-            existing_qaqc_sql[colnames[col_positions]] = pd.concat([qaqc_arr['Snow_Depth'],qaqc_arr['Snow_Depth_flags']],axis=1)
+            existing_qaqc_sql[colnames[col_positions]] = pd.concat([qaqc_sDepth['Snow_Depth'],qaqc_sDepth['Snow_Depth_flags']],axis=1)
             existing_qaqc_sql.to_sql(name='%s' %sql_qaqc_name, con=engine, if_exists = 'replace', index=False)
             
             # make sure you assign 'DateTime' column as the primary column

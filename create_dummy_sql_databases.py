@@ -35,7 +35,6 @@ wx_stations = [x for x in wx_stations if not "steph" in x] # remove all stephani
 wx_stations = [w.replace('clean_machmellkliniklini', 'clean_Machmellkliniklini') for w in wx_stations] # rename machmellkliniklini so it doesn't get cut out
 wx_stations = [x for x in wx_stations if not "machmell" in x] # remove machmell from list
 wx_stations = [x for x in wx_stations if not "russell" in x] # remove russell from list
-wx_stations = [x for x in wx_stations if not "rennellpass" in x] # remove rennell from list
 wx_stations = [x for x in wx_stations if not "plummerhut" in x] # remove plummer from list
 wx_stations = [w.replace('clean_Stephanie3', 'clean_steph3') for w in wx_stations] # rename steph3 back to original
 wx_stations = [w.replace('clean_Machmellkliniklini', 'clean_machmellkliniklini') for w in wx_stations] # rename machmellkliniklini back to original
@@ -63,9 +62,17 @@ for l in range(len(wx_stations_name)):
             dt_sql[i] = dt_sql[i].floor('H') # floor to nearest hour
             
         sql_file['DateTime'] = dt_sql
+        
+    #%% Only select earliest possible date for full year
+    #dt_sql = pd.to_datetime(sql_file['DateTime'])    
+    #yr_last = int(np.flatnonzero(sql_file['DateTime'] == '2023-10-01 00:00:00'))
+    #yr_str = dt_sql[0].year # index of year 1
+    #dt_str = np.flatnonzero(dt_sql >= np.datetime64(datetime(yr_str, 10, 1, 00, 00, 00)))[0] # index of full water year for start of timeseries
     
     #%% only keep data from oldest to last water year
     new_df = sql_file[:int(np.flatnonzero(sql_file['DateTime'] == '2023-10-01 00:00:00'))]
+    #new_df = sql_file[dt_str:int(np.flatnonzero(sql_file['DateTime'] == '2023-10-01 00:00:00'))]
+    
     nanout = [c for c in new_df.columns if c not in ['DateTime', 'WatYr']]
     new_df[nanout] = np.nan
     

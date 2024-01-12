@@ -49,7 +49,6 @@ wx_stations = [x for x in wx_stations if not "steph" in x] # remove all stephani
 wx_stations = [w.replace('clean_machmellkliniklini', 'clean_Machmellkliniklini') for w in wx_stations] # rename machmellkliniklini so it doesn't get cut out
 wx_stations = [x for x in wx_stations if not "machmell" in x] # remove machmell from list
 wx_stations = [x for x in wx_stations if not "russell" in x] # remove russell from list
-wx_stations = [x for x in wx_stations if not "rennellpass" in x] # remove rennell from list
 wx_stations = [x for x in wx_stations if not "plummerhut" in x] # remove plummer from list
 wx_stations = [w.replace('clean_Stephanie3', 'clean_steph3') for w in wx_stations] # rename steph3 back to original
 wx_stations = [w.replace('clean_Machmellkliniklini', 'clean_machmellkliniklini') for w in wx_stations] # rename machmellkliniklini back to original
@@ -71,6 +70,23 @@ for l in range(len(wx_stations_name)):
     # CSV column names
     sql_file = pd.read_sql(sql="SELECT * FROM clean_" + sql_database, con = engine)
     
+    #%% fix time issue with RennellPass where minutes are not rounded
+    # round to nearest hour
+    if wx_stations_name[l] == 'rennellpass':
+        dt_clean_round = sql_file['DateTime'].dt.round('60min')
+        
+        # calculate difference to check if there are any duplicate time values
+        #deltas = dt_clean_round.diff()[1:]
+        #same_vals = deltas[deltas < timedelta(hours=1)]
+        
+        # remove rows in dataframe that match index of same_vals
+        #sql_file_clean = sql_file_clean.drop(same_vals.index)
+        #sql_file_clean = sql_file_clean.reset_index(drop=True)
+        #dt_clean_round = dt_clean_round.drop(same_vals.index)
+        #dt_clean_round = dt_clean_round.reset_index(drop=True)
+        
+        sql_file['DateTime'] = dt_clean_round
+        
     #%% Make sure there is no gap in datetime (all dates are consecutive) and place
     # nans in all other values if any gaps are identified
     #deltas = sql_file['DateTime'].diff()[1:] # identify non-consecutive datetime
@@ -179,8 +195,8 @@ for l in range(len(wx_stations_name)):
         qaqc_arr = sql_file.copy() # array to QAQC
                 
         #%% find min value for specific interval (if needed)
-        #idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2019-10-01 00:00:00'))
-        #idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2019-10-14 17:00:00'))
+        #idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2013-10-27 10:00:00'))
+        #idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2013-11-17 07:00:00'))
         #round(np.mean(qaqc_arr[var].iloc[idx_first:idx_last]),2)
 
         #%% Apply static range test (remove values where difference is > than value)
@@ -294,22 +310,13 @@ for l in range(len(wx_stations_name)):
         col_positions = [i for i, s in enumerate(colnames) if var in s]
         
         # push newly qaqced variable to SQL database -
-        # warn if length of existing qaqc sql datbase is not the same as the 
-        # qaqc variable from this code (this shouldn't happen in theory, but 
-        # better be safe than sorry)
-        if len(existing_qaqc_sql) != len(qaqc_sDepth):
-            #raise Exception('Careful: lengths between existing qaqc array and new qaqc var do not match!') # Don't! If you catch, likely to hide bugs.
-            # skip to next iteration if error found
-            print('>>> Length difference between SQL and qaqced variable - not writing to SQL database! >>>')  
-            continue
-        else:
-            # move the qaqc columns into the appropriate columns in existing qaqc sql database
-            existing_qaqc_sql[colnames[col_positions]] = pd.concat([qaqc_sDepth['Snow_Depth'],qaqc_sDepth['Snow_Depth_flags']],axis=1)
-            existing_qaqc_sql.to_sql(name='%s' %sql_qaqc_name, con=engine, if_exists = 'replace', index=False)
-            
-            # make sure you assign 'DateTime' column as the primary column
-            with engine.connect() as con:
-                    con.execute('ALTER TABLE `qaqc_%s`' %wx_stations_name[l] + ' ADD PRIMARY KEY (`DateTime`);')
+        # move the qaqc columns into the appropriate columns in existing qaqc sql database
+        existing_qaqc_sql[colnames[col_positions]] = pd.concat([qaqc_sDepth['Snow_Depth'],qaqc_sDepth['Snow_Depth_flags']],axis=1)
+        existing_qaqc_sql.to_sql(name='%s' %sql_qaqc_name, con=9engine, if_exists = 'replace', index=False)
+        
+        # make sure you assign 'DateTime' column as the primary column
+        with engine.connect() as con:
+                con.execute('ALTER TABLE `qaqc_%s`' %wx_stations_name[l] + ' ADD PRIMARY KEY (`DateTime`);')
                     
         #%% plot raw vs QA/QC with two subplots, one for data, oen for flags
 #        # prepare colormap for plotting flags

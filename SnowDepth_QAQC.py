@@ -312,7 +312,7 @@ for l in range(len(wx_stations_name)):
         # push newly qaqced variable to SQL database -
         # move the qaqc columns into the appropriate columns in existing qaqc sql database
         existing_qaqc_sql[colnames[col_positions]] = pd.concat([qaqc_sDepth['Snow_Depth'],qaqc_sDepth['Snow_Depth_flags']],axis=1)
-        existing_qaqc_sql.to_sql(name='%s' %sql_qaqc_name, con=9engine, if_exists = 'replace', index=False)
+        existing_qaqc_sql.to_sql(name='%s' %sql_qaqc_name, con=engine, if_exists = 'replace', index=False)
         
         # make sure you assign 'DateTime' column as the primary column
         with engine.connect() as con:

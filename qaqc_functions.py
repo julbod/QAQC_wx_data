@@ -232,9 +232,9 @@ def mean_rolling_month_window(data_all, flag, dt_sql, sd):
 def interpolate_qaqc(data_all, data_subset, flag, max_hours):
     flag_arr = pd.Series(np.zeros((len(data_all))))
     mask = data_subset.isna()
-    mask = (mask.groupby((mask != mask.shift()).cumsum()).transform(lambda x: len(x) > max_hours)* mask)
+    mask = (mask.groupby((mask != mask.shift()).cumsum()).transform(lambda x: len(x) <= max_hours)* mask)
 
-    idx = data_subset[np.logical_or(mask == 0, data_subset == np.nan)].index
+    idx = data_subset[np.logical_or(mask == True, data_subset == np.nan)].index
     interpolated = data_subset.interpolate() # interpolate all nans
     data_all[idx] = interpolated[idx] # place newly interpolated values into the master array
     flag_arr[idx] = flag        

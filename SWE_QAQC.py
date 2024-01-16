@@ -98,6 +98,9 @@ for l in range(len(wx_stations_name)):
         
     if wx_stations_name[l] == 'tetrahedron':
         yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2016))      
+        
+    if wx_stations_name[l] == 'lowercain':
+        yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2018)) 
 
     qaqc_arr_final = []
 
@@ -186,9 +189,9 @@ for l in range(len(wx_stations_name)):
         qaqc_arr = sql_file.copy() # array to QAQC
         
         #%% find min value for specific interval (if needed)
-        idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-10-01 00:00:00'))
-        idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-10-23 13:00:00'))
-        round(np.mean(qaqc_arr[var].iloc[idx_first:idx_last]),2)
+        #idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2020-10-01 00:00:00'))
+        #idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2020-11-12 08:00:00'))
+        #round(np.mean(qaqc_arr[var].iloc[idx_first:idx_last]),2)
         
         #%% Apply static range test (remove values where difference is > than value)
         # Maximum value between each step: 10 degrees
@@ -207,7 +210,7 @@ for l in range(len(wx_stations_name)):
             flags_1.iloc[idx_first:idx_last] = 1
             
         # add fix to Tetrahedron which is failing to identify outliers in Spring 2021
-        if wx_stations[l] == 'clean_tetrahedron' and yr_range[k] == 2021:
+        if wx_stations[l] == 'clean_tetrahedron' and yr_range[k] == 2021 or yr_range[k] == 2022:
             # first interval
             idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-04-01 18:00:00'))
             idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-04-06 13:00:00'))
@@ -218,6 +221,13 @@ for l in range(len(wx_stations_name)):
             # second interval
             idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-05-16 11:00:00'))
             idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-06-14 03:00:00'))
+            qaqc_arr[var].iloc[idx_first:idx_last] = np.nan
+            qaqc_arr["SWE"].iloc[idx_first:idx_last] = np.nan
+            flags_1.iloc[idx_first:idx_last] = 1
+            
+            # third interval
+            idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2023-04-19 13:00:00'))
+            idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2023-06-12 20:00:00'))
             qaqc_arr[var].iloc[idx_first:idx_last] = np.nan
             qaqc_arr["SWE"].iloc[idx_first:idx_last] = np.nan
             flags_1.iloc[idx_first:idx_last] = 1
@@ -281,9 +291,10 @@ for l in range(len(wx_stations_name)):
 
         #%% plot raw vs QA/QC
         fig, ax = plt.subplots()
+        plt.axhline(y=0, color='k', linestyle='-', linewidth=0.5) # plot horizontal line at 0
         
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],raw, '#1f77b4', linewidth=1) # blue
-        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#0f0303', linewidth=1)
+        #ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#d62728', linewidth=1) # red / black is 0f0303
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_7.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
         #ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
         #ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_9.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#0f0303', linewidth=1)

@@ -69,23 +69,6 @@ for l in range(len(wx_stations_name)):
     #%% import current data on SQL database and clean name of some columns to match
     # CSV column names
     sql_file = pd.read_sql(sql="SELECT * FROM clean_" + sql_database, con = engine)
-    
-    #%% fix time issue with RennellPass where minutes are not rounded
-    # round to nearest hour
-    if wx_stations_name[l] == 'rennellpass':
-        dt_clean_round = sql_file['DateTime'].dt.round('60min')
-        
-        # calculate difference to check if there are any duplicate time values
-        #deltas = dt_clean_round.diff()[1:]
-        #same_vals = deltas[deltas < timedelta(hours=1)]
-        
-        # remove rows in dataframe that match index of same_vals
-        #sql_file_clean = sql_file_clean.drop(same_vals.index)
-        #sql_file_clean = sql_file_clean.reset_index(drop=True)
-        #dt_clean_round = dt_clean_round.drop(same_vals.index)
-        #dt_clean_round = dt_clean_round.reset_index(drop=True)
-        
-        sql_file['DateTime'] = dt_clean_round
         
     #%% Make sure there is no gap in datetime (all dates are consecutive) and place
     # nans in all other values if any gaps are identified
@@ -303,7 +286,8 @@ for l in range(len(wx_stations_name)):
         qaqc_arr_final = pd.concat(qaqc_arr_final) # concatenate lists
         sql_qaqc_name = 'qaqc_' + wx_stations_name[l]
         qaqc_sDepth = pd.concat([qaqc_arr_final['DateTime'],qaqc_arr_final['Snow_Depth'],qaqc_arr_final['Snow_Depth_flags']],axis=1)
-    
+        qaqc_sDepth = np.round(qaqc_sDepth,1) # round to nearest one decimal 
+        
         # import current qaqc sql db and find columns matching the qaqc variable here
         existing_qaqc_sql = pd.read_sql('SELECT * FROM %s' %sql_qaqc_name, engine)
         colnames = existing_qaqc_sql.columns

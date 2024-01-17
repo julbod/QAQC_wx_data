@@ -7,7 +7,6 @@ import os
 import pandas as pd 
 import os.path
 from sqlalchemy import create_engine
-import pymysql
 from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +14,6 @@ from csv import writer
 import re
 from pathlib import Path
 import traceback
-from datetime import timedelta
 
 #%% import support functions
 os.chdir('D:/GitHub/QAQC_wx_data')
@@ -263,7 +261,8 @@ for l in range(len(wx_stations_name)):
 
         #%% plot raw vs QA/QC
         fig, ax = plt.subplots()
-        
+        plt.axhline(y=0, color='k', linestyle='-', linewidth=0.5) # plot horizontal line at 0
+
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],raw, '#1f77b4', linewidth=1) # blue
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#d62728', linewidth=1)
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_7.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
@@ -286,7 +285,6 @@ for l in range(len(wx_stations_name)):
         qaqc_arr_final = pd.concat(qaqc_arr_final) # concatenate lists
         sql_qaqc_name = 'qaqc_' + wx_stations_name[l]
         qaqc_sDepth = pd.concat([qaqc_arr_final['DateTime'],qaqc_arr_final['Snow_Depth'],qaqc_arr_final['Snow_Depth_flags']],axis=1)
-        qaqc_sDepth = np.round(qaqc_sDepth,1) # round to nearest one decimal 
         
         # import current qaqc sql db and find columns matching the qaqc variable here
         existing_qaqc_sql = pd.read_sql('SELECT * FROM %s' %sql_qaqc_name, engine)

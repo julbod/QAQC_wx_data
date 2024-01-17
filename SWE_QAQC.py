@@ -189,7 +189,7 @@ for l in range(len(wx_stations_name)):
         qaqc_arr = sql_file.copy() # array to QAQC
         
         #%% find min value for specific interval (if needed)
-        #idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2020-10-01 00:00:00'))
+        #idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2023-04-19 13:00:00'))
         #idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2020-11-12 08:00:00'))
         #round(np.mean(qaqc_arr[var].iloc[idx_first:idx_last]),2)
         
@@ -210,7 +210,7 @@ for l in range(len(wx_stations_name)):
             flags_1.iloc[idx_first:idx_last] = 1
             
         # add fix to Tetrahedron which is failing to identify outliers in Spring 2021
-        if wx_stations[l] == 'clean_tetrahedron' and yr_range[k] == 2021 or yr_range[k] == 2022:
+        if wx_stations[l] == 'clean_tetrahedron' and yr_range[k] == 2021 or wx_stations[l] == 'clean_tetrahedron' and yr_range[k] == 2022:
             # first interval
             idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-04-01 18:00:00'))
             idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2022-04-06 13:00:00'))
@@ -294,7 +294,7 @@ for l in range(len(wx_stations_name)):
         plt.axhline(y=0, color='k', linestyle='-', linewidth=0.5) # plot horizontal line at 0
         
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],raw, '#1f77b4', linewidth=1) # blue
-        #ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#d62728', linewidth=1) # red / black is 0f0303
+        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#0f0303', linewidth=1) # red #d62728 / black is 0f0303
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_7.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
         #ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
         #ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_9.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#0f0303', linewidth=1)
@@ -317,7 +317,7 @@ for l in range(len(wx_stations_name)):
         qaqc_arr_final = pd.concat(qaqc_arr_final) # concatenate lists
         sql_qaqc_name = 'qaqc_' + wx_stations_name[l]
         qaqc_SWE = pd.concat([qaqc_arr_final['DateTime'],qaqc_arr_final['SWE'],qaqc_arr_final['SWE_flags']],axis=1)
-    
+        
         # import current qaqc sql db and find columns matching the qaqc variable here
         existing_qaqc_sql = pd.read_sql('SELECT * FROM %s' %sql_qaqc_name, engine)
         colnames = existing_qaqc_sql.columns

@@ -235,8 +235,8 @@ def interpolate_qaqc(data_all, data_subset, flag, max_hours):
     mask = (mask.groupby((mask != mask.shift()).cumsum()).transform(lambda x: len(x) <= max_hours)* mask)
 
     idx = data_subset[np.logical_or(mask == True, data_subset == np.nan)].index
-    interpolated = data_subset.interpolate() # interpolate all nans
-    data_all[idx] = interpolated[idx] # place newly interpolated values into the master array
+    interpolated = data_subset.interpolate() #( interpolate all nans
+    data_all[idx] = np.round(interpolated[idx],1) # place newly interpolated values into the master array and round to nearest one decimal 
     flag_arr[idx] = flag        
 
     return data_all, flag_arr

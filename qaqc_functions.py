@@ -254,18 +254,20 @@ def merge_row(row):
 def nearest(items, pivot):
     return min(items, key=lambda x: abs(x - pivot))
 
+#%% Remove non-sensical zero values. This is ideal for air_temperature where a zero value
+# which is not bounded by i-1 and i+1 values which are above a certain threshold
+# (e.g. -3 to 3), then you can assume the zero is not a realistic value
+def false_zero_removal(data_all, data_subset, flag, threshold):
+    flag_arr = pd.Series(np.zeros((len(data_all))))
+    idx_exist = (data_subset.iloc[:].loc[data_subset.isnull()==False].index.tolist()) # indices of existing values
+    data_nonnan = data_subset[idx_exist] # only keep non-nan values
 
+    for i in range(1,len(data_nonnan)-1):
+        if data_nonnan.iloc[i] == 0 and abs(data_nonnan.iloc[i-1] - data_nonnan.iloc[i]) >= threshold or data_nonnan.iloc[i] == 0 and abs(data_nonnan.iloc[i+1] - data_nonnan.iloc[i]) >= threshold:
+            idx = data_nonnan.index[i]
+            data_all[idx] = np.nan # place nans if duplicates found
+            flag_arr[idx] = flag        
 
+    return data_all, flag_arr
 
-
-
-
-
-
-
-
-
-
-
-
-
+#%%

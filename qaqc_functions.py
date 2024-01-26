@@ -301,9 +301,12 @@ def precip_drainage_fix(data_all, data_subset, flag, dt_yr, dt, wx_stations_name
     idxs_dt_post = post_drain_dt[idxs]
         
     # in case there is no idxs_dt_pre or idxs_dt_post
-    # (e.g. no draining during water year)
+    # (e.g. no draining during water year) then don't change anything in data
+    # and keep flag as 0
     corrected_data = data_subset.copy()
-    
+    flags = data_subset.copy()*0 # hack to keep array indices but make all vals 0
+    flags[np.isnan(flags)] = 0 # make sure there are no nans
+
     # bring data back up after jumps if there is a drain during water year
     for i in range(len(idxs_dt_pre)):
         
@@ -312,6 +315,7 @@ def precip_drainage_fix(data_all, data_subset, flag, dt_yr, dt, wx_stations_name
             ts_idx_post = int(np.flatnonzero((idxs_dt_post[i] == dt))) # index in timeseries
             jump_val = corrected_data.loc[ts_idx_post-1] - corrected_data.loc[ts_idx_post]
             corrected_data.loc[ts_idx_post:] = corrected_data.loc[ts_idx_post:] + jump_val
+            flags.loc[ts_idx_post:] = flag
        
        # if there is no pre jump date in csv (e.g. because the jump is earlier
        # than i-1 and there are nans in between)
@@ -320,9 +324,10 @@ def precip_drainage_fix(data_all, data_subset, flag, dt_yr, dt, wx_stations_name
             ts_idx_post = int(np.flatnonzero((idxs_dt_post[i] == dt))) # index in timeseries
             jump_val = corrected_data.loc[ts_idx_pre] - corrected_data.loc[ts_idx_post]
             corrected_data.loc[ts_idx_post:] = corrected_data.loc[ts_idx_post:] + jump_val
+            flags.loc[ts_idx_post:] = flag
                 
     data_all.iloc[corrected_data.index] = corrected_data
-    flag_arr.iloc[corrected_data.index] = flag        
+    flag_arr.iloc[flags.index] = flags       
     
     return data_all, flag_arr
 

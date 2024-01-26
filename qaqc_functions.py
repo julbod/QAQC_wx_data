@@ -205,6 +205,17 @@ def negtozero(data_all, data_subset, flag):
     
     return data_all, flag_arr
 
+#%% Reset timeseries to zero at start of water year if it's not already the case
+def reset_zero_watyr(data_all, data_subset, flag):
+    flag_arr = pd.Series(np.zeros((len(data_all))))
+
+    idx_first_valid = data_subset.first_valid_index() # first non-nan value in series
+    if data_subset.loc[idx_first_valid] != 0:
+       data_all[data_subset.index] = data_subset - data_subset.loc[idx_first_valid]
+       flag_arr[data_subset.index] = flag        
+       
+    return data_all, flag_arr
+
 #%% Remove outliers based on mean and std using a rolling window for each
 # month of the year
 def mean_rolling_month_window(data_all, flag, dt_sql, sd):
@@ -268,6 +279,51 @@ def false_zero_removal(data_all, data_subset, flag, threshold):
             data_all[idx] = np.nan # place nans if duplicates found
             flag_arr[idx] = flag        
 
+    return data_all, flag_arr
+
+#%% Fix jumps in precipitation data from sudden drainage events during site visits
+def precip_drainage_fix(data_all, data_subset, flag, dt_yr, dt, wx_stations_name, year):
+    flag_arr = pd.Series(np.zeros((len(data_all))))
+    
+    # Read in the CSV containing specific summer dates for certain wx stations
+    with open('D:/GitHub/QAQC_wx_data/PrecipPipeRaw_drain.csv', 'r') as readFile:
+        df_csv = pd.read_csv(readFile,low_memory=False)
+        csv_dt_pre = pd.to_datetime(df_csv['pre_drain'])
+        csv_dt_post = pd.to_datetime(df_csv['post_drain'])
+        df_csv['post_drain'] = csv_dt_post.dt.year.values
+        pre_drain_dt = csv_dt_pre.values
+        post_drain_dt = csv_dt_post.values
+        
+    # find matching datetimes between csv and the current water year + name of station
+    name = pd.concat([pd.DataFrame([wx_stations_name],columns=['filename']), pd.DataFrame([year],columns=['watyr'])], axis=1, join='inner')
+    idxs = np.flatnonzero((df_csv[['filename','watyr']].values == name.values).all(axis=1))
+    idxs_dt_pre = pre_drain_dt[idxs]
+    idxs_dt_post = post_drain_dt[idxs]
+        
+    # in case there is no idxs_dt_pre or idxs_dt_post
+    # (e.g. no draining during water year)
+    corrected_data = data_subset.copy()
+    
+    # bring data back up after jumps if there is a drain during water year
+    for i in range(len(idxs_dt_pre)):
+        
+        # if there is no pre jump date in csv (e.g. because the jump is at i-1)
+        if pd.isnull(idxs_dt_pre[i]):
+            ts_idx_post = int(np.flatnonzero((idxs_dt_post[i] == dt))) # index in timeseries
+            jump_val = corrected_data.loc[ts_idx_post-1] - corrected_data.loc[ts_idx_post]
+            corrected_data.loc[ts_idx_post:] = corrected_data.loc[ts_idx_post:] + jump_val
+       
+       # if there is no pre jump date in csv (e.g. because the jump is earlier
+       # than i-1 and there are nans in between)
+        else:
+            ts_idx_pre = int(np.flatnonzero((idxs_dt_pre[i] == dt))) # index in timeseries
+            ts_idx_post = int(np.flatnonzero((idxs_dt_post[i] == dt))) # index in timeseries
+            jump_val = corrected_data.loc[ts_idx_pre] - corrected_data.loc[ts_idx_post]
+            corrected_data.loc[ts_idx_post:] = corrected_data.loc[ts_idx_post:] + jump_val
+                
+    data_all.iloc[corrected_data.index] = corrected_data
+    flag_arr.iloc[corrected_data.index] = flag        
+    
     return data_all, flag_arr
 
 #%%

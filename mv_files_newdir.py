@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Move SEGYs
 # ----------------------------------
-var_name = 'SWE'
+var_name = 'PC_Raw_Pipe'
 Path("D:/Vancouver_Island_University/Wx_station/wx_data_processing/QAQC/v2/merged_figures/" + (var_name)).mkdir(parents=True, exist_ok=True)
 
 import os, shutil

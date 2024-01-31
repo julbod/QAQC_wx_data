@@ -242,6 +242,12 @@ for l in range(len(wx_stations_name)):
         qaqc_6, flags_6 = qaqc_functions.sdepth_summer_zeroing(qaqc_arr[var], data, flag, dt_yr, dt_summer_yr, summer_threshold, qaqc_arr['DateTime'], wx_stations_name[l], yr_range[k]+1)
         qaqc_arr[var] = qaqc_6
         
+        if wx_stations[l] == 'clean_steph2' and yr_range[k] == 2017:
+            idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2018-03-28 10:00'))
+            idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2018-06-01 10:00'))
+            qaqc_arr[var].iloc[idx_first:idx_last] = np.nan
+            flags_6.iloc[idx_first:idx_last] = 0
+        
         #%% one more pass to correct remaining outliers using the step size
         # and different levels until it's all 'shaved off'
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]

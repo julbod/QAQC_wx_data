@@ -80,20 +80,20 @@ for l in range(len(wx_stations_name)):
 
     # Fix issue with Datlamen and Rennell where time is not rounded to nearest
     # hour which affects how the code below works
-    if wx_stations_name[l] == 'datlamen' or 'rennellpass':
-        df_dt = sql_file.set_index('DateTime') 
-        dt_sql = copy.deepcopy(sql_file['DateTime'])
-        dt_sql = pd.to_datetime(dt_sql)
-        for i in range(len(sql_file)):
-            dt_sql[i] = dt_sql[i].floor('H') # floor to nearest hour
+#    if wx_stations_name[l] == 'datlamen' or 'rennellpass':
+#        df_dt = sql_file.set_index('DateTime') 
+#        dt_sql = copy.deepcopy(sql_file['DateTime'])
+#        dt_sql = pd.to_datetime(dt_sql)
+#        for i in range(len(sql_file)):
+#            dt_sql[i] = dt_sql[i].floor('H') # floor to nearest hour
             
-        sql_file['DateTime'] = dt_sql
+#        sql_file['DateTime'] = dt_sql
         
     #%% Only select earliest possible date for full year
-    #dt_sql = pd.to_datetime(sql_file['DateTime'])    
-    #yr_last = int(np.flatnonzero(sql_file['DateTime'] == '2023-10-01 00:00:00'))
-    #yr_str = dt_sql[0].year # index of year 1
-    #dt_str = np.flatnonzero(dt_sql >= np.datetime64(datetime(yr_str, 10, 1, 00, 00, 00)))[0] # index of full water year for start of timeseries
+    dt_sql = pd.to_datetime(sql_file['DateTime'])    
+    yr_last = int(np.flatnonzero(sql_file['DateTime'] == '2023-10-01 00:00:00'))
+    yr_str = dt_sql[0].year # index of year 1
+    dt_str = np.flatnonzero(dt_sql >= np.datetime64(datetime(yr_str, 10, 1, 00, 00, 00)))[0] # index of full water year for start of timeseries
     
     #%% only keep data from oldest to last water year
     # if wx_station is stephanie (except Steph3), then find nearest date to Sept 30 2023

@@ -5,6 +5,7 @@
 import pandas as pd 
 import numpy as np
 from itertools import groupby
+import math
 
 #%% Static range test (result: FAIL if TRUE)
 def static_range_test(data_all, data_subset, flag, step):
@@ -205,6 +206,19 @@ def negtozero(data_all, data_subset, flag):
     
     return data_all, flag_arr
 
+
+#%% Remove all values above specific threshold
+def reset_max_threshold(data_all, data_subset, flag, threshold):
+    flag_arr = pd.Series(np.zeros((len(data_all))))
+
+    for i in range(len(data_subset)-1):
+        if data_subset.iloc[i] > threshold:
+            idx = data_subset.index[i]
+            data_all[idx] = np.nan 
+            flag_arr[idx] = flag        
+    
+    return data_all, flag_arr
+
 #%% Reset timeseries to zero at start of water year if it's not already the case
 def reset_zero_watyr(data_all, data_subset, flag):
     flag_arr = pd.Series(np.zeros((len(data_all))))
@@ -252,6 +266,49 @@ def interpolate_qaqc(data_all, data_subset, flag, max_hours):
 
     return data_all, flag_arr
 
+#%% Interpolate qaqced wx station data for Relative Humidity
+# RH cannot be interpolated on its own. It first needs to be converted to EA
+# using Air_Temperature at each datapoint. If Air_Temp is nan, RH cannot be 
+# converted to EA and thus cannot be interpolated 
+def interpolate_RH_qaqc(data_all_rh, data_subset_rh, data_subset_temp, flag, max_hours):
+    flag_arr = pd.Series(np.zeros((len(data_all_rh))))
+    
+    # find index of nans in Air_Temp and place nans for corresponding index in RH
+    nan_temp = np.where(data_subset_temp.isna()) # find index of nans in Air_Temp
+    data_subset_rh.iloc[nan_temp] = np.nan # make nan index nans in RH
+    
+    # calculate saturated vapour pressure from air temperature
+    estar = data_subset_temp.copy()
+    for i in range(len(data_subset_temp)):
+        if data_subset_temp.iloc[i] <= 0:
+            estar[i] = 0.611 * math.exp((21.88 * data_subset_temp.iloc[i]) / (data_subset_temp.iloc[i] + 265.5))
+        else:
+            estar[i] = 0.611 * math.exp((17.27 * data_subset_temp.iloc[i]) / (data_subset_temp.iloc[i] + 237.3))
+    
+    # convert RH to vapour pressure using saturated vapour pressure when RH is non-nans
+    vp = (estar * data_subset_rh) / 100
+    
+    # find nans in RH that are less than 3 hours
+    mask_vp = vp.isna()
+    mask_vp = (mask_vp.groupby((mask_vp != mask_vp.shift()).cumsum()).transform(lambda x: len(x) <= max_hours)* mask_vp)
+    idx = vp[np.logical_or(mask_vp == True, vp == np.nan)].index
+    
+    # interpolate data
+    interpolated = vp.interpolate() #( interpolate all nans
+    vp_interpolated = np.round(interpolated[idx],1) # place newly interpolated values into the master array and round to nearest one decimal 
+
+    # convert back to RH after interpolation
+    vp[idx] = vp_interpolated
+    data_subset_rh_interpolated = 100 * (vp / estar)
+    
+    # avoid -inf in data if division is impossible
+    data_subset_rh_interpolated = np.maximum(0,data_subset_rh_interpolated)
+    data_subset_rh_interpolated = np.minimum(100,data_subset_rh_interpolated)
+    
+    data_all_rh[idx] = np.round(data_subset_rh_interpolated[idx],1) # place newly interpolated values into the master array and round to nearest one decimal 
+    flag_arr[idx] = flag        
+
+    return data_all_rh, flag_arr
 #%% merge individual arrays together and split by ',' if multiple integers in
 # one column
 def merge_row(row):

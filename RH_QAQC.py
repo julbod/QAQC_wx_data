@@ -8,7 +8,6 @@ import os.path
 from sqlalchemy import create_engine
 from datetime import datetime
 import numpy as np
-import copy
 import matplotlib.pyplot as plt
 from csv import writer
 import re
@@ -61,6 +60,7 @@ for l in range(len(wx_stations_name)):
     #%% import current data on SQL database and clean name of some columns to match
     # CSV column names
     sql_file = pd.read_sql(sql="SELECT * FROM clean_" + sql_database, con = engine)
+    qaqc_file_airTemp = pd.read_sql(sql="SELECT * FROM qaqc_" + sql_database, con = engine) # get air temp from already qaqced data
 
     #%% Make sure there is no gap in datetime (all dates are consecutive) and place
     # nans in all other values if any gaps are identified
@@ -178,7 +178,7 @@ for l in range(len(wx_stations_name)):
         #idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2020-11-12 08:00:00'))
         #round(np.mean(qaqc_arr[var].iloc[idx_first:idx_last]),2)
         
-        #%% Remove valuesa above 100 or below 0% threshold
+        #%% Remove values above 100 or below 0% threshold
         # above 100%
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 2
@@ -186,49 +186,44 @@ for l in range(len(wx_stations_name)):
         qaqc_2, flags_2 = qaqc_functions.reset_max_threshold(qaqc_arr[var], data, flag, threshold)
         qaqc_arr[var] = qaqc_2
         
-        # below 0%
+        # below 5%
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 2
-        qaqc_2, flags_2 = qaqc_functions.negtozero(qaqc_arr[var], data, flag)
+        threshold = 5 # in %
+        qaqc_2, flags_2 = qaqc_functions.reset_min_threshold(qaqc_arr[var], data, flag, threshold)
         qaqc_arr[var] = qaqc_2
     
         #%% Apply static range test (remove values where difference is > than value)
-        # Maximum value between each step: 10%
+        # Maximum value between each step: 85%
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 1
-        step_size = 10 # in %
+        step_size = 85 # in %
         qaqc_1, flags_1 = qaqc_functions.static_range_test(qaqc_arr[var], data, flag, step_size)
         qaqc_arr[var] = qaqc_1
                 
-        #%% Remove duplicate consecutive values
-        # data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        # flag = 3
-        # qaqc_3, flags_3 = qaqc_functions.duplicates(qaqc_arr[var], data, flag)
-        # qaqc_arr[var] = qaqc_3
-        
-        #%% Remove outliers based on mean and std using a rolling window for each
+        #%% Remove duplicate consecutive values == 100% or == 0% for RH
+        # equal to 100%
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        flag = 4
-        st_dev = 4 # specify how many times you want to multiple st_dev (good starting point is 3; 1 is too harsh) 
-        qaqc_4, flags_4 = qaqc_functions.mean_rolling_month_window(qaqc_arr[var], flag, dt_sql, st_dev)
-        qaqc_arr[var] = qaqc_4
+        flag = 3
+        window = 120 # in hours (equivalent to 5 days)
+        threshold = 100
+        qaqc_3, flags_3 = qaqc_functions.duplicates_window(qaqc_arr[var], data, flag, window, threshold)
+        qaqc_arr[var] = qaqc_3
         
-        #%% Remove any last outliers using sliding window of 20 samples and 
-        # calculating the difference between the value at [i] and the mean of 
-        # sliding window which should not exceed a specific value
-        # Maximum value between each step: 30 cm
-        #flag = 5
-        #mean_sliding_val = 30 # in cm
-        #window_len = 20 # previously 20
-        #qaqc_5, flags_5 = qaqc_functions.mean_sliding_window(qaqc_arr[var], data, flag, window_len, mean_sliding_val)
-        #qaqc_arr[var] = qaqc_5
+        # equal to 0%        
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 3
+        window = 2 # in hours
+        threshold = 0
+        qaqc_3, flags_3 = qaqc_functions.duplicates_window(qaqc_arr[var], data, flag, window, threshold)
+        qaqc_arr[var] = qaqc_3
         
         #%% Remove non-sensical zero values if they are not bounded by a 
         # specific threshold for i-1 and i+1 (e.g. -3 to 3). This removes
         # false zeros in the data
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 6
-        false_zero_threshold = 70 # in %
+        false_zero_threshold = 75 # in %
         qaqc_6, flags_6 = qaqc_functions.false_zero_removal(qaqc_arr[var], data, flag, false_zero_threshold)
         qaqc_arr[var] = qaqc_6
         
@@ -238,21 +233,42 @@ for l in range(len(wx_stations_name)):
         # value for Air_Temp and RH, so if NaN exist in Air_Temp [i], then RH cannot
         # be interpolated. 
         data_rh = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        data_temp = qaqc_arr['Air_Temp'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        data_temp = qaqc_file_airTemp['Air_Temp'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 8
         max_hours = 3
         qaqc_8, flags_8 = qaqc_functions.interpolate_RH_qaqc(qaqc_arr[var], data_rh, data_temp, flag, max_hours)
         qaqc_arr[var] = qaqc_8
+        
+        #%% One more pass with removal of outlier values to correct for
+        # interpolation-related issues:
+        
+        #%% Remove values above 100 or below 5% threshold
+        # above 100%
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 2
+        threshold = 100 # in %
+        qaqc_2, flags_2 = qaqc_functions.reset_max_threshold(qaqc_arr[var], data, flag, threshold)
+        qaqc_arr[var] = qaqc_2
+        
+        # below 5%
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 2
+        threshold = 5 # in %
+        qaqc_2, flags_2 = qaqc_functions.reset_min_threshold(qaqc_arr[var], data, flag, threshold)
+        qaqc_arr[var] = qaqc_2
+        
+        #%% Apply static range test (remove values where difference is > than value)
+        # Maximum value between each step: 85%
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 1
+        step_size = 85 # in %
+        qaqc_1, flags_1 = qaqc_functions.static_range_test(qaqc_arr[var], data, flag, step_size)
+        qaqc_arr[var] = qaqc_1
        
         #%% merge flags together into large array, with comma separating multiple
         # flags for each row if these exist
-        flags = pd.concat([flags_1,flags_4,flags_6,flags_8],axis=1)
+        flags = pd.concat([flags_1,flags_2,flags_3,flags_6,flags_8],axis=1)
         qaqc_arr['RH_flags'] = flags.apply(qaqc_functions.merge_row, axis=1)
-        
-        #%% replace flags which are [1,8] by 1 as these were flagged as outliers first
-        flags_18_idx = np.where(qaqc_arr['RH_flags'] == '1,8')
-        qaqc_arr['RH'].iloc[flags_18_idx] = np.nan
-        qaqc_arr['RH_flags'].iloc[flags_18_idx] = 1
         
         #%% plot raw vs QA/QC
         fig, ax = plt.subplots()
@@ -260,7 +276,7 @@ for l in range(len(wx_stations_name)):
     
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],raw, '#1f77b4', linewidth=1) # blue
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#d62728', linewidth=1)
-        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_6.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
+        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_1.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
         
         plt.title(sql_name + ' %s QA-QC WTYR %d-%d' %(var_name, yr_range[k],yr_range[k]+1))
         plt.savefig('%s %s Final Comparison WTYR %d-%d.png' %(sql_name,var_name_short,yr_range[k],yr_range[k]+1), dpi=400)

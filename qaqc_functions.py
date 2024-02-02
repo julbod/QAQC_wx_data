@@ -48,6 +48,25 @@ def duplicates(data_all, data_subset, flag):
             flag_arr[idx] = flag        
     return data_all, flag_arr
 
+#%% Remove duplicate values of 0% or 100% over specific window size
+def duplicates_window(data_all, data_subset, flag, window, threshold):
+    flag_arr = pd.Series(np.zeros((len(data_all))))
+    
+    for i in range(len(data_subset)-window):
+        # for duplicate values at 100
+        if threshold == 100 and all(data_subset.iloc[i:i+window] == threshold):
+            idx = data_subset.index[i:i+window]
+            data_all[idx] = np.nan
+            flag_arr[idx] = flag  
+            
+        # for duplicate values at 0
+        elif threshold == 0 and all(data_subset.iloc[i:i+window] == threshold):
+            idx = data_subset.index[i:i+window]
+            data_all[idx] = np.nan
+            flag_arr[idx] = flag      
+            
+    return data_all, flag_arr
+
 #%% Remove non-sensical non-zero values in summer for snow depth variable
 # Find all values below threshold, then find the longest consecutive 
 # list of these values (e.g. summer months) and replace them by 0
@@ -206,13 +225,24 @@ def negtozero(data_all, data_subset, flag):
     
     return data_all, flag_arr
 
-
 #%% Remove all values above specific threshold
 def reset_max_threshold(data_all, data_subset, flag, threshold):
     flag_arr = pd.Series(np.zeros((len(data_all))))
 
     for i in range(len(data_subset)-1):
         if data_subset.iloc[i] > threshold:
+            idx = data_subset.index[i]
+            data_all[idx] = np.nan 
+            flag_arr[idx] = flag        
+    
+    return data_all, flag_arr
+
+#%% Remove all values below specific threshold
+def reset_min_threshold(data_all, data_subset, flag, threshold):
+    flag_arr = pd.Series(np.zeros((len(data_all))))
+
+    for i in range(len(data_subset)-1):
+        if data_subset.iloc[i] < threshold:
             idx = data_subset.index[i]
             data_all[idx] = np.nan 
             flag_arr[idx] = flag        

@@ -212,7 +212,7 @@ for l in range(len(wx_stations_name)):
         # Maximum value between each step: 10 degrees
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 1
-        step_size = 2 # in mm
+        step_size = 5 # in mm
         qaqc_1, flags_1 = qaqc_functions.static_range_test(qaqc_arr[var], data, flag, step_size)
         qaqc_arr[var] = qaqc_1
         
@@ -258,9 +258,16 @@ for l in range(len(wx_stations_name)):
         # and different levels until it's all 'shaved off'
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 7
-        step_sizes = [3,2] # in mm
+        step_sizes = [7,6] # in mm
         qaqc_7, flags_7 = qaqc_functions.static_range_multiple(qaqc_arr[var], data, flag, step_sizes)
         qaqc_arr[var] = qaqc_7
+        
+        #%% Fix decreasing trends in PC_Raw_Pipe data which can
+        # be linked to evaporation
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 9
+        qaqc_9, flags_9 = qaqc_functions.fix_pc_pipe_evaporation(qaqc_arr[var], data, flag)
+        qaqc_arr[var] = qaqc_9
         
         #%% Interpolate nans with method='linear' using pandas.DataFrame.interpolate
         # First, identify gaps larger than 3 hours (which should not be interpolated)
@@ -272,7 +279,7 @@ for l in range(len(wx_stations_name)):
        
         #%% merge flags together into large array, with comma separating multiple
         # flags for each row if these exist
-        flags = pd.concat([flags_1,flags_2,flags_3, flags_4, flags_5, flags_6,flags_7,flags_8],axis=1)
+        flags = pd.concat([flags_1,flags_2,flags_3, flags_4, flags_5, flags_6,flags_7,flags_8,flags_9],axis=1)
         qaqc_arr['PC_Raw_Pipe_flags'] = flags.apply(qaqc_functions.merge_row, axis=1)
         
         #%% plot raw vs QA/QC
@@ -281,7 +288,7 @@ for l in range(len(wx_stations_name)):
     
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],raw, '#1f77b4', linewidth=1) # blue
         ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_8.loc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#d62728', linewidth=1)
-        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_7.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
+        ax.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],qaqc_9.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)], '#ff7f0e', linewidth=1)
         
         plt.title(sql_name + ' %s QA-QC WTYR %d-%d' %(var_name, yr_range[k],yr_range[k]+1))
         plt.savefig('%s %s Final Comparison WTYR %d-%d.png' %(sql_name,var_name_short,yr_range[k],yr_range[k]+1), dpi=400)

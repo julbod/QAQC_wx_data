@@ -418,4 +418,39 @@ def precip_drainage_fix(data_all, data_subset, flag, dt_yr, dt, wx_stations_name
     
     return data_all, flag_arr
 
+#%% Detect and fix decreasing trends in PC_Raw_Pipe data which can
+# be linked to evaporation
+def fix_pc_pipe_evaporation(data_all, data_subset, flag):
+    flag_arr = pd.Series(np.zeros((len(data_all))))
+    
+    # create temp array and find nans
+    corrected_data = data_subset.copy()    
+    nan_idxs = np.flatnonzero(np.isnan(corrected_data))
+    
+    # prepare timeseries for differentiation step
+    first_idx_val = corrected_data.iloc[0]
+    corrected_data.iloc[0] = 0 # set zero in case it starts as nan
+    corrected_data = corrected_data.interpolate() # interpolate nans to differentiate
+
+    # identify declines in data (negative trends) and remove their impact on 
+    # the timeseries. This dampens the trend but keeps the cummulative values
+    # realistic. One could alternatively add the negative differences to the
+    # the whole timeseries but this results in unrealisticly high cummulative
+    # values because sometimes neg trends are compensated by positive trends later    
+    rg = np.nanmax(corrected_data) - np.nanmin(corrected_data) # save initial range
+    slope_change = np.diff(corrected_data) # differentiate
+    slope_change[slope_change < 0] = 0 # reset negative increments to 0
+    cum_corrected = np.cumsum([slope_change]) # assemble into cumulative sum again
+    cum_corrected[np.isnan(cum_corrected)] = np.nan # reset to NaN values that were originally NaNs
+   
+    # normalize and scale
+    corrected_data.iloc[0:len(cum_corrected)] = cum_corrected / max(cum_corrected) * rg
+    corrected_data.iloc[nan_idxs] = np.nan # reset nans for pre-interpolation
+    corrected_data.iloc[0] = first_idx_val # reset first index in ts from before
+    
+    data_all.iloc[corrected_data.index] = np.round(corrected_data,1) # round data
+    flag_arr.iloc[corrected_data.index] = flag
+    
+    return data_all, flag_arr
+ 
 #%%

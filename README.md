@@ -26,21 +26,21 @@ a.	All years
 
 | Snow Depth Flags: | 
 | ------------- |
-0.	No qaqc required
+| 0.	No qaqc required |
 | ------------- |
-1.	Outlier removal #1 (between i and i-1): 25 cm threshold
+| 1.	Outlier removal #1 (between i and i-1): 25 cm threshold |
 | ------------- |
-2.	Remove negative values 
+| 2.	Remove negative values  |
 | ------------- |
-3.	Remove duplicate consecutive values
+| 3.	Remove duplicate consecutive values |
 | ------------- |
-4.	Remove outliers based on mean and 4x standard deviation over rolling window of 1 month
+| 4.	Remove outliers based on mean and 4x standard deviation over rolling window of 1 month |
 | ------------- |
-6.	Set values to zero in summer season
+| 6.	Set values to zero in summer season |
 | ------------- |
-7.	Outlier removal #2 (between i and i-1) – multiple thresholds: 20, 15, 10, 5 cm
+| 7.	Outlier removal #2 (between i and i-1) – multiple thresholds: 20, 15, 10, 5 cm |
 | ------------- |
-8.	Interpolation of NULL/NaN values for gaps smaller than or equal to 3 hours
+| 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to 3 hours |
 | ------------- |
 
 SWE:

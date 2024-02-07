@@ -1,7 +1,9 @@
-This folder contains codes designed to qaqc weather station data for the VIU hydromet network (http://graph.viu-hydromet-wx.ca/)
+## Read me please
+This folder contains codes designed to qaqc weather station data for the VIU hydromet network (https://qaqc-miniapp.shinyapps.io/qaqc_miniapp/). 
+All data on the current webpage contains a series of flags, which are described below.
 
 ## QAQC flags by variable:
-The order of the flags reflects the order of each qaqc step in the code - this is why flag numbers are not increasing chronologically. However, an attempt was made to standardise the flag number for each step so that it can be recognised across variables (e.g. outlier removal #1 is always Flag # 1). 
+The order of the flags reflects the order of each qaqc step in the code - this is why flag numbers are not increasing chronologically. However, an attempt was made to standardise the flag number for each step so that it can be recognised across variables (e.g. outlier removal #1 is always Flag #1). 
 
 | Snow Depth Flags: | 
 | ------------- |

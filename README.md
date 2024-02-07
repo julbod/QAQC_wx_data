@@ -1,6 +1,6 @@
 ## Read me please
 This folder contains codes designed to qaqc weather station data for the VIU hydromet network (https://qaqc-miniapp.shinyapps.io/qaqc_miniapp/). 
-All data on the current webpage contains a series of flags, which are described below.
+All data on the current webpage contains a series of flags, which are described below. Note that each variable has a code associated with it that qaqcs the data. The master code which contains all the qaqc functions necessary for the codes to work.
 
 ## QAQC flags by variable:
 The order of the flags in the below tables reflects the order of each qaqc step in the code - this is why flag numbers are not increasing chronologically. However, an attempt was made to standardise the flag number for each step so that they can be recognised easily across variables (e.g. outlier removal #1 is always Flag #1). 

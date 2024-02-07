@@ -24,7 +24,7 @@ b.	2016-17: Oct-Mar
 6.	Rennellpass:
 a.	All years
 
-| ## Snow Depth Flags: | 
+| Snow Depth Flags: | 
 | ------------- |
 | 0.	No qaqc required |
 | 1.	Outlier removal #1 (between i and i-1): **25**  cm threshold |

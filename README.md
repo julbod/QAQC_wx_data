@@ -5,64 +5,70 @@ This folder contains codes designed to qaqc weather station data for the VIU hyd
 | Snow Depth Flags: | 
 | ------------- |
 | 0.	No qaqc required |
-| 1.	Outlier removal #1 (between i and i-1): **25**  cm threshold |
+| 1.	Outlier removal #1 (between i and i-1): **25 cm** threshold |
 | 2.	Remove negative values  |
 | 3.	Remove duplicate consecutive values |
-| 4.	Remove outliers based on mean and **4**x standard deviation over rolling window of 1 month |
+| 4.	Remove outliers based on mean and **4x standard deviation** over rolling window of **1 month** |
 | 6.	Set values to zero in summer season |
-| 7.	Outlier removal #2 (between i and i-1) – multiple thresholds: **20**, **15**, **10**, **5** cm |
-| 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to 3 hours |
+| 7.	Outlier removal #2 (between i and i-1) – multiple thresholds: **20, 15, 10, 5 cm** |
+| 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to **3 hours** |
 
-SWE Flags: 
-0.	No qaqc required
-1.	Outlier removal #1 (between i and i-1): 20 mm threshold
-2.	Remove negative values 
-6.	Set values to zero in summer season
-7.	Outlier removal #2 (between i and i-1) – multiple thresholds: 15, 10 mm
-8.	Interpolation of NULL/NaN values for gaps smaller than or equal to 3 hours
+| SWE Flags: | 
+| ------------- |
+| 0.	No qaqc required | 
+| 1.	Outlier removal #1 (between i and i-1): **20 mm** threshold | 
+| 2.	Remove negative values | 
+| 6.	Set values to zero in summer season | 
+| 7.	Outlier removal #2 (between i and i-1) – multiple thresholds: **15, 10 mm** | 
+| 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to **3 hours** | 
 
-Air Temp Flags: 
-0.	No qaqc required
-1.	Outlier removal #1 (between i and i-1): 10 degrees C threshold
-3.	Remove duplicate consecutive values
-4.	Remove outliers based on mean and 4x standard deviation over rolling window of 1 month
-6.	Convert value 0 to NULL/NaN when a value of 0 is bounded on either side by +/- 3 degrees C (this filters out values where sensor was faulty and defaulted to 0 for no reason)
-8.	Interpolation of NULL/NaN values for gaps smaller than or equal to 3 hours
+| Air Temp Flags: | 
+| ------------- |
+| 0.	No qaqc required | 
+| 1.	Outlier removal #1 (between i and i-1): **10 degrees C** threshold | 
+| 3.	Remove duplicate consecutive values | 
+| 4.	Remove outliers based on mean and **4x standard deviation** over rolling window of **1 month** | 
+| 6.	Convert value 0 to NULL/NaN when a value of **0** is bounded on either side by +/- **3 degrees C** (this filters out values where sensor was faulty and defaulted to 0 for no reason) | 
+| 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to **3 hours** | 
 
 
-PC Raw Pipe Flags: 
-0.	No qaqc required
-1.	Outlier removal #1 (between i and i-1): 5 mm threshold
-2.	Remove negative values 
-3.	Reset timeseries to start at 0 at every new water year
-4.	Remove outliers based on mean and 3x standard deviation over rolling window of 1 month
-5.	Bring data back up to latest valid data point prior to draining of precipitation pipe
-6.	Convert value 0 to NULL/NaN when a value of 0 is bounded on either side by +/- 15 mm (this filters out values where sensor was faulty and defaulted to 0 for no reason)
-7.	Outlier removal #2 (between i and i-1) – multiple thresholds: 7, 6 mm
-9.	Rescaled timeseries to account for evaporation of precip pipe during hot weather by identifying negative differences in the data and rescaling it back to the min/max of original trend
-8.	Interpolation of NULL/NaN values for gaps smaller than or equal to 3 hours
+| PC Raw Pipe Flags: | 
+| ------------- |
+| 0.	No qaqc required | 
+| 1.	Outlier removal #1 (between i and i-1): **5 mm** threshold | 
+| 2.	Remove negative values | 
+| 3.	Reset timeseries to start at **0** at every new water year | 
+| 4.	Remove outliers based on mean and **3x standard deviation** over rolling window of **1 month** | 
+| 5.	Bring data back up to latest valid data point prior to draining of precipitation pipe | 
+| 6.	Convert value 0 to NULL/NaN when a value of **0** is bounded on either side by +/- **15 mm** (this filters out values where sensor was faulty and defaulted to 0 for no reason) | 
+| 7.	Outlier removal #2 (between i and i-1) – multiple thresholds: **7, 6 mm** | 
+| 9.	Rescaled timeseries to account for evaporation of precip pipe during hot weather by identifying negative differences in the data and rescaling it back to the min/max of original trend | 
+| 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to **3 hours** | 
 
-RH Flags: 
-0.	No qaqc required
-1.	Outlier removal #1 (between i and i-1): 85% threshold
-2.	Remove values above 100% or below 5% 
-3.	Remove duplicate consecutive values equal to 100% or 0% for window size of 120 hours and 2 hours respectively
-6.	Convert value 0 to NULL/NaN when a value of 0 is bounded on either side by +/- 75% (this filters out values where sensor was faulty and defaulted to 0 for no reason)
-8.	Interpolation of NULL/NaN values for gaps smaller than or equal to 3 hours. RH data is first converted to vapour pressure using the qaqced Air_Temp data.
+| RH Flags: | 
+| ------------- |
+| 0.	No qaqc required | 
+| 1.	Outlier removal #1 (between i and i-1): **85%** threshold | 
+| 2.	Remove values above **100%** or below **5%** | 
+| 3.	Remove duplicate consecutive values equal to **100% or 0%** for window size of **120 hours and 2 hours** respectively | 
+| 6.	Convert value 0 to NULL/NaN when a value of **0** is bounded on either side by +/- **75%** (this filters out values where sensor was faulty and defaulted to 0 for no reason) | 
+| 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to **3 hours**. RH data is first converted to vapour pressure using the qaqced Air_Temp data | 
 
-BP Flags: 
-0.	No qaqc required
-2.	Remove values above 120kpa or below 25kpa 
-1.	Outlier removal #1 (between i and i-1): 4 kpa threshold
-4.	Remove outliers based on mean and 4x standard deviation over rolling window of 1 month
-8.	Interpolation of NULL/NaN values for gaps smaller than or equal to 3 hours. 
+| BP Flags: | 
+| ------------- |
+| 0.	No qaqc required | 
+| 2.	Remove values above **120kpa** or below **25kpa** | 
+| 1.	Outlier removal #1 (between i and i-1): **4 kpa** threshold | 
+| 4.	Remove outliers based on mean and **4x standard deviation** over rolling window of **1 month** | 
+| 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to **3 hours** | 
 
-PP_Tipper Flags: 
-0.	No qaqc required
-1.	Outlier removal #1 (between i and i-1): 12mm threshold
-2.	Remove negative values 
-3.	Remove duplicate consecutive values equal to 0 mm for window size of 1000 hours
-8.	Interpolation of NULL/NaN values for gaps smaller than or equal to 3 hours. 
+| PP_Tipper Flags: | 
+| ------------- |
+| 0.	No qaqc required | 
+| 1.	Outlier removal #1 (between i and i-1): **12mm** threshold | 
+| 2.	Remove negative values | 
+| 3.	Remove duplicate consecutive values equal to **0 mm** for window size of **1000 hours** | 
+| 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to **3 hours** | 
 
 
 # QAQC known issues regarding offsets, issues with qaqc worklfow, or common issue with the data:
@@ -93,8 +99,8 @@ a.	All years
 
 ## SWE:
 1.	Tetrahedron:
-    a.	2020-21: Apr-July
-    b.	2022-23: Apr-June
+a.	2020-21: Apr-July
+b.	2022-23: Apr-June
 2.	ClaytonFalls:
 a.	2015-16: July-Sep
 b.	2017-18: July-Sep

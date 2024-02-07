@@ -3,7 +3,7 @@ This folder contains codes designed to qaqc weather station data for the VIU hyd
 All data on the current webpage contains a series of flags, which are described below.
 
 ## QAQC flags by variable:
-The order of the flags reflects the order of each qaqc step in the code - this is why flag numbers are not increasing chronologically. However, an attempt was made to standardise the flag number for each step so that it can be recognised across variables (e.g. outlier removal #1 is always Flag #1). 
+The order of the flags in the below tables reflects the order of each qaqc step in the code - this is why flag numbers are not increasing chronologically. However, an attempt was made to standardise the flag number for each step so that they can be recognised easily across variables (e.g. outlier removal #1 is always Flag #1). 
 
 | Snow Depth Flags: | 
 | ------------- |
@@ -76,9 +76,9 @@ The order of the flags reflects the order of each qaqc step in the code - this i
 
 ## QAQC known issues regarding offsets, issues with qaqc worklfow, or common issue with the data:
 
-Below are some examples where the qaqc process has either not worked well or there are offset in the data which have not been corrected for due to lack of clear understanding of the reason behind the offset. Decisions must be made as to what to do with these offsets, and then re-run the qaqc code on the offset-corrected data. Note that this list is by no means exhaustive. There is also a table for each variable which documents the flag # and its associated meaning. 
+Below are some examples where the qaqc process has either not worked well or there are offset in the data which have not been corrected for due to lack of clear understanding of the reason behind the offset. Decisions must be made as to what to do with these offsets, and then re-run the qaqc code on the offset-corrected data. Note that this list is by no means exhaustive. 
 
-## Snow Depth:
+### Snow Depth:
 1.	Cainridgerun:
 a.	2019-20: July-Sep
 2.	Eastbuxton:
@@ -100,7 +100,7 @@ b.	2016-17: Oct-Mar
 6.	Rennellpass:
 a.	All years
 
-## SWE:
+### SWE:
 1.	Tetrahedron:
 a.	2020-21: Apr-July
 b.	2022-23: Apr-June
@@ -116,7 +116,7 @@ b.	2022-23: Nov
 5.	Klinaklini:
 a.	2019-20
 
-## Air Temp:
+### Air Temp:
 1.	Datlamen:
 a.	All years are rounded to nearest minute (vs. clean which is every 15th min). This explains the horizontal offset. Either qaqc in 15th minute or round clean. Ask Bill, then check again the qaqc that it is not affected by that (e.g. it’s cutting off some peaks in air temp in 2016-03-30 and early April which should not be removed? But flag number is not accurate, probably due to rounding off issue!
 b.	2016-17 is weird…. Check!
@@ -125,10 +125,10 @@ a.	Data for 2014-15 and 2015-16 not on qaqc plots but on png. Why?
 3.	Steph3:
 a.	2016-17: 2017-12 peak is wrong?
 
-## PC Raw Pipe:
+### PC Raw Pipe:
 None
 
-## RH:
+### RH:
 1.	Rennell Pass:
 a.	2012-2013: June 2012 to Feb 2013: Sensor failure? Data dips to below 80% for few months
 b.	2014-2016: Dec 2014 to Apr 2016: Sensor failure? Data dips to below 60% for 1.5 years and only recovers half-way through 2016 
@@ -139,11 +139,11 @@ a.	Weird low values in Dec-Jan 2018
 4.	Upper Cruickshank
 a.	Weird low values Oct-Dec 2020
 
-## BP:
+### BP:
 1.	Homathko: Values are all around 35 kpa when they should likely be higher. Checked conversion from mv to hpa and tested the atmospheric correction but it doesn’t seem to be the answer? 
 
 
-## PP_Tipper:
+### PP_Tipper:
 1.	Is the outlier removal threshold too harsh (12 mm)? Record atmospheric rivers in November 2021 (around 13-15th) was ~120mm/24hr in places near Vancouver/Abbotsford, equivalent to 5mm every hour for 24 hours. Accepting this fluctuates on an hourly basis, I doubled this value, but it appears to still be cutting off some data that may be accurate (e.g. Ape Lake 2017-18).
 
 

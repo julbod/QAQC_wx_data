@@ -1,4 +1,4 @@
-## Read me please
+# Read me please
 This folder contains codes designed to qaqc weather station data for the VIU hydromet network (https://qaqc-miniapp.shinyapps.io/qaqc_miniapp/). 
 All data on the current webpage contains a series of flags, which are described below. Note that each variable has a code associated with it that qaqcs the data (see this folder). The master code which contains all the qaqc functions necessary for the codes to work (i.e. qaqc_functions.py) is also in this folder.
 

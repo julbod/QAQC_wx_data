@@ -1,6 +1,6 @@
 ## Read me please
 This folder contains codes designed to qaqc weather station data for the VIU hydromet network (https://qaqc-miniapp.shinyapps.io/qaqc_miniapp/). 
-All data on the current webpage contains a series of flags, which are described below. Note that each variable has a code associated with it that qaqcs the data. The master code which contains all the qaqc functions necessary for the codes to work.
+All data on the current webpage contains a series of flags, which are described below. Note that each variable has a code associated with it that qaqcs the data (see this folder). The master code which contains all the qaqc functions necessary for the codes to work (i.e. qaqc_functions.py) is also in this folder.
 
 ## QAQC flags by variable:
 The order of the flags in the below tables reflects the order of each qaqc step in the code - this is why flag numbers are not increasing chronologically. However, an attempt was made to standardise the flag number for each step so that they can be recognised easily across variables (e.g. outlier removal #1 is always Flag #1). 
@@ -130,8 +130,8 @@ None (yeah right)
 
 ### RH:
 1.	Rennell Pass:
-a.	2012-2013: June 2012 to Feb 2013: Sensor failure? Data dips to below 80% for few months
-b.	2014-2016: Dec 2014 to Apr 2016: Sensor failure? Data dips to below 60% for 1.5 years and only recovers half-way through 2016 
+> a.	2012-2013: June 2012 to Feb 2013: Sensor failure? Data dips to below 80% for few months
+>> b.	2014-2016: Dec 2014 to Apr 2016: Sensor failure? Data dips to below 60% for 1.5 years and only recovers half-way through 2016 
 2.	Clayton Falls:
 a.	2014-2017: Data likely erroneous for all years (2015 good at start but becomes dodgy from Feb 2015; then bad start of Water Year 2018). Remove from qaqc process and graphs?
 3.	Steph3:

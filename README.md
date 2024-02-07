@@ -93,8 +93,8 @@ a.	All years
 
 ## SWE:
 1.	Tetrahedron:
-&nbsp; a.	2020-21: Apr-July
-&nbsp; b.	2022-23: Apr-June
+    a.	2020-21: Apr-July
+    b.	2022-23: Apr-June
 2.	ClaytonFalls:
 a.	2015-16: July-Sep
 b.	2017-18: July-Sep

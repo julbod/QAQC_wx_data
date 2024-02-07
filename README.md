@@ -80,64 +80,64 @@ Below are some examples where the qaqc process has either not worked well or the
 
 ### Snow Depth:
 1.	Cainridgerun:
-a.	2019-20: July-Sep
+	+ a.	2019-20: July-Sep
 2.	Eastbuxton:
-a.	2014-15
-b.	2017-18
-c.	2018-19
-d.	2019-20
-e.	2020-21
-f.	2021-22
-g.	2022-23
+	+ a.	2014-15
+	+ b.	2017-18
+	+ c.	2018-19
+	+ d.	2019-20
+	+ e.	2020-21
+	+ f.	2021-22
+	+ g.	2022-23
 3.	Klinaklini
-a.	2018-19
-b.	2019-20
+	+ a.	2018-19
+	+ b.	2019-20
 4.	MachmellKliniklini
-a.	2016-17: Oct-Apr
+	+ a.	2016-17: Oct-Apr
 5.	Cayley:
-a.	2015-16
-b.	2016-17: Oct-Mar
+	+ a.	2015-16
+	+ b.	2016-17: Oct-Mar
 6.	Rennellpass:
-a.	All years
+	+ a.	All years
 
 ### SWE:
 1.	Tetrahedron:
-a.	2020-21: Apr-July
-b.	2022-23: Apr-June
+	+ a.	2020-21: Apr-July
+	+ b.	2022-23: Apr-June
 2.	ClaytonFalls:
-a.	2015-16: July-Sep
-b.	2017-18: July-Sep
-c.	2019-20: June-Sep
+	+ a.	2015-16: July-Sep
+	+ b.	2017-18: July-Sep
+	+ c.	2019-20: June-Sep
 3.	Arrowsmith:
-a.	2017-18: July-Sep
+	+ a.	2017-18: July-Sep
 4.	Apelake:
-a.	2019-20: Jan
-b.	2022-23: Nov
+	+ a.	2019-20: Jan
+	+ b.	2022-23: Nov
 5.	Klinaklini:
-a.	2019-20
+	+ a.	2019-20
 
 ### Air Temp:
 1.	Datlamen:
-a.	All years are rounded to nearest minute (vs. clean which is every 15th min). This explains the horizontal offset. Either qaqc in 15th minute or round clean. Ask Bill, then check again the qaqc that it is not affected by that (e.g. it’s cutting off some peaks in air temp in 2016-03-30 and early April which should not be removed? But flag number is not accurate, probably due to rounding off issue!
-b.	2016-17 is weird…. Check!
+	+ a.	All years are rounded to nearest minute (vs. clean which is every 15th min). This explains the horizontal offset. Either qaqc in 15th minute or round clean. Ask Bill, then check again the qaqc that it is not affected by that (e.g. it’s cutting off some peaks in air temp in 2016-03-30 and early April which should not be removed? But flag number is not accurate, probably due to rounding off issue!
+	+ b.	2016-17 is weird…. Check!
 2.	Eastbuxton:
-a.	Data for 2014-15 and 2015-16 not on qaqc plots but on png. Why?
+	+ a.	Data for 2014-15 and 2015-16 not on qaqc plots but on png. Why?
 3.	Steph3:
-a.	2016-17: 2017-12 peak is wrong?
+	+ a.	2016-17: 2017-12 peak is wrong?
 
 ### PC Raw Pipe:
 None (yeah right)
 
 ### RH:
 1.	Rennell Pass:
-	 a.	2012-2013: June 2012 to Feb 2013: Sensor failure? Data dips to below 80% for few months
->> b.	2014-2016: Dec 2014 to Apr 2016: Sensor failure? Data dips to below 60% for 1.5 years and only recovers half-way through 2016 
+	+ a.	2012-2013: June 2012 to Feb 2013: Sensor failure? Data dips to below 80% for few months
+	+ b.	2014-2016: Dec 2014 to Apr 2016: Sensor failure? Data dips to below 60% for 1.5 years and only recovers half-way through 2016 
 2.	Clayton Falls:
-a.	2014-2017: Data likely erroneous for all years (2015 good at start but becomes dodgy from Feb 2015; then bad start of Water Year 2018). Remove from qaqc process and graphs?
+	+ a.	2014-2017: Data likely erroneous for all years (2015 good at start but becomes dodgy from Feb 2015; then bad start of Water Year 2018). Remove from qaqc process and graphs?
 3.	Steph3:
-a.	Weird low values in Dec-Jan 2018
+	+ a.	Weird low values in Dec-Jan 2018
 4.	Upper Cruickshank
-a.	Weird low values Oct-Dec 2020
+	+ a.	Weird low values Oct-Dec 2020
 
 ### BP:
 1.	Homathko: Values are all around 35 kpa when they should likely be higher. Checked conversion from mv to hpa and tested the atmospheric correction but it doesn’t seem to be the answer? 

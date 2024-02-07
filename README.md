@@ -1,6 +1,7 @@
 This folder contains codes designed to qaqc weather station data for the VIU hydromet network (http://graph.viu-hydromet-wx.ca/)
 
-# QAQC flags by variable:
+## QAQC flags by variable:
+The order of the flags reflects the order of each qaqc step in the code - this is why flag numbers are not increasing chronologically. However, an attempt was made to standardise the flag number for each step so that it can be recognised across variables (e.g. outlier removal #1 is always Flag # 1). 
 
 | Snow Depth Flags: | 
 | ------------- |
@@ -71,7 +72,7 @@ This folder contains codes designed to qaqc weather station data for the VIU hyd
 | 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to **3 hours** | 
 
 
-# QAQC known issues regarding offsets, issues with qaqc worklfow, or common issue with the data:
+## QAQC known issues regarding offsets, issues with qaqc worklfow, or common issue with the data:
 
 Below are some examples where the qaqc process has either not worked well or there are offset in the data which have not been corrected for due to lack of clear understanding of the reason behind the offset. Decisions must be made as to what to do with these offsets, and then re-run the qaqc code on the offset-corrected data. Note that this list is by no means exhaustive. There is also a table for each variable which documents the flag # and its associated meaning. 
 

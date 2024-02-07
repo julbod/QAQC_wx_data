@@ -130,7 +130,7 @@ None (yeah right)
 
 ### RH:
 1.	Rennell Pass:
-	a.	2012-2013: June 2012 to Feb 2013: Sensor failure? Data dips to below 80% for few months
+	 a.	2012-2013: June 2012 to Feb 2013: Sensor failure? Data dips to below 80% for few months
 >> b.	2014-2016: Dec 2014 to Apr 2016: Sensor failure? Data dips to below 60% for 1.5 years and only recovers half-way through 2016 
 2.	Clayton Falls:
 a.	2014-2017: Data likely erroneous for all years (2015 good at start but becomes dodgy from Feb 2015; then bad start of Water Year 2018). Remove from qaqc process and graphs?

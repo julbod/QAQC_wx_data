@@ -93,8 +93,8 @@ a.	All years
 
 ## SWE:
 1.	Tetrahedron:
-a.	2020-21: Apr-July
-b.	2022-23: Apr-June
+&nbsp; a.	2020-21: Apr-July
+&nbsp; b.	2022-23: Apr-June
 2.	ClaytonFalls:
 a.	2015-16: July-Sep
 b.	2017-18: July-Sep
@@ -109,12 +109,12 @@ a.	2019-20
 
 ## Air Temp:
 1.	Datlamen:
-  a.	All years are rounded to nearest minute (vs. clean which is every 15th min). This explains the horizontal offset. Either qaqc in 15th minute or round clean. Ask Bill, then check again the qaqc that it is not affected by that (e.g. it’s cutting off some peaks in air temp in 2016-03-30 and early April which should not be removed? But flag number is not accurate, probably due to rounding off issue!
-  b.	2016-17 is weird…. Check!
+a.	All years are rounded to nearest minute (vs. clean which is every 15th min). This explains the horizontal offset. Either qaqc in 15th minute or round clean. Ask Bill, then check again the qaqc that it is not affected by that (e.g. it’s cutting off some peaks in air temp in 2016-03-30 and early April which should not be removed? But flag number is not accurate, probably due to rounding off issue!
+b.	2016-17 is weird…. Check!
 2.	Eastbuxton:
-  a.	Data for 2014-15 and 2015-16 not on qaqc plots but on png. Why?
+a.	Data for 2014-15 and 2015-16 not on qaqc plots but on png. Why?
 3.	Steph3:
-  a.	2016-17: 2017-12 peak is wrong?
+a.	2016-17: 2017-12 peak is wrong?
 
 ## PC Raw Pipe:
 None

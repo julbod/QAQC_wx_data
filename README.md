@@ -1,7 +1,6 @@
 This folder contains codes designed to qaqc weather station data for the VIU hydromet network (http://graph.viu-hydromet-wx.ca/)
 
 
-
 Below are some examples where the qaqc process has either not worked well or there are offset in the data which have not been corrected for due to lack of clear understanding of the reason behind the offset. Decisions must be made as to what to do with these offsets, and then re-run the qaqc code on the offset-corrected data. Note that this list is by no means exhaustive. There is also a table for each variable which documents the flag # and its associated meaning. 
 Snow Depth:
 1.	Cainridgerun:
@@ -24,15 +23,25 @@ a.	2015-16
 b.	2016-17: Oct-Mar
 6.	Rennellpass:
 a.	All years
-Snow Depth Flags: 
+
+| Snow Depth Flags: | 
+| ------------- |
 0.	No qaqc required
+| ------------- |
 1.	Outlier removal #1 (between i and i-1): 25 cm threshold
+| ------------- |
 2.	Remove negative values 
+| ------------- |
 3.	Remove duplicate consecutive values
+| ------------- |
 4.	Remove outliers based on mean and 4x standard deviation over rolling window of 1 month
+| ------------- |
 6.	Set values to zero in summer season
+| ------------- |
 7.	Outlier removal #2 (between i and i-1) – multiple thresholds: 20, 15, 10, 5 cm
+| ------------- |
 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to 3 hours
+| ------------- |
 
 SWE:
 1.	Tetrahedron:

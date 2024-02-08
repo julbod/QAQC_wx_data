@@ -1,6 +1,6 @@
 # Read me please
-This folder contains codes designed to qaqc weather station data for the VIU hydromet network (https://qaqc-miniapp.shinyapps.io/qaqc_miniapp/). 
-All data on the current webpage contains a series of flags, which are described below. Note that each variable has a code associated with it that qaqcs the data (see this folder). The master code which contains all the qaqc functions necessary for the codes to work (i.e. qaqc_functions.py) is also in this folder.
+This folder contains codes designed to qaqc weather station data for the VIU hydromet network (https://qaqc-miniapp.shinyapps.io/qaqc_miniapp/). Note that each variable has a code associated with it that qaqcs the data (see this folder). The master code which contains all the qaqc functions necessary for the codes to work (i.e. qaqc_functions.py) is also in this folder. 
+All plots on the qaqc webpage contain a series of flag numbers in the hover box for each data, which are described below:
 
 ## QAQC flags by variable:
 The order of the flags in the below tables reflects the order of each qaqc step in the code - this is why flag numbers are not increasing chronologically. However, an attempt was made to standardise the flag number for each step so that they can be recognised easily across variables (e.g. outlier removal #1 is always Flag #1). 
@@ -146,6 +146,7 @@ None (yeah right)
 ### PP_Tipper:
 1.	Is the outlier removal threshold too harsh (12 mm)? Record atmospheric rivers in November 2021 (around 13-15th) was ~120mm/24hr in places near Vancouver/Abbotsford, equivalent to 5mm every hour for 24 hours. Accepting this fluctuates on an hourly basis, I doubled this value, but it appears to still be cutting off some data that may be accurate (e.g. Ape Lake 2017-18).
 
-
+### PC Tipper:
+None. Cumsum is recalculated from the qaqced PP_Tipper data. Flag number is set to 0 throughout since no qaqc is applied to the cumsum. Any differences observed between the "clean" and "qaqc" PC_Tipper data is from the qaqc applied to the PP_Tipper.
 
 

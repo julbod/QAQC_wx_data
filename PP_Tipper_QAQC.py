@@ -204,6 +204,13 @@ for l in range(len(wx_stations_name)):
         qaqc_1, flags_1 = qaqc_functions.static_range_test(qaqc_arr[var], data, flag, step_size)
         qaqc_arr[var] = qaqc_1
         
+        # temp fix for offset which is preceded by nan but is not getting picked
+        # up because there are nans beforehand.
+        if wx_stations_name[l] == 'plummerhut':
+            idx = np.where(qaqc_1 == 400)
+            qaqc_1.iloc[idx] = np.nan
+            flags_1.iloc[idx] = 1
+        
         #%% Remove all negative values (non-sensical)
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 2

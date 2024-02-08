@@ -172,6 +172,7 @@ for l in range(len(wx_stations_name)):
         # calculate cumsum 
         data = PC_tipper[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         PC_tipper_0 = np.cumsum(data) 
+        PC_tipper_0 = np.round(PC_tipper_0,2) 
         flags_0 = data.copy()*0 # hack to keep array indices but make all vals 0 for flag
         flags_0[np.isnan(flags_0)] = 0 # make sure there are no nans and if so replace by flag 0
         PC_tipper["PC_Tipper"] = PC_tipper_0

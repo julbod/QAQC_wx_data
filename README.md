@@ -73,6 +73,9 @@ The order of the flags in the below tables reflects the order of each qaqc step 
 | 3.	Remove duplicate consecutive values equal to **0 mm** for window size of **1000 hours** | 
 | 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to **3 hours** | 
 
+| PC_Tipper Flags: | 
+| ------------- |
+| 0.	No qaqc required - cumsum calculated from the qaqced PP_Tipper data | 
 
 ## QAQC known issues regarding offsets, issues with qaqc worklfow, or common issue with the data:
 

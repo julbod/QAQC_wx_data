@@ -78,26 +78,10 @@ for l in range(len(wx_stations_name)):
     if 10 <= datetime.now().month and datetime.now().month <= 12:
         yr_range = np.arange(dt_sql[0].year, datetime.now().year) # find min and max years
     else: 
-        yr_range = np.arange(dt_sql[0].year, datetime.now().year-1) # find min and max years
-    
-    # if wx_stations_name[l] == 'steph3':
-    #     yr_range = np.arange(int(yr_range[np.flatnonzero(yr_range == 2015)]),yr_range[-1]+1)
-        
-    # if wx_stations_name[l] == 'claytonfalls':
-    #     delete = [np.flatnonzero(yr_range == 2014),np.flatnonzero(yr_range == 2016),np.flatnonzero(yr_range == 2018)]
-    #     yr_range = np.delete(yr_range, delete)
-        
-    # if wx_stations_name[l] == 'mountarrowsmith':
-    #     yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2016))      
+        yr_range = np.arange(dt_sql[0].year, datetime.now().year-1) # find min and max years     
         
     if wx_stations_name[l] == 'tetrahedron':
         yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2020))      
-        
-    # if wx_stations_name[l] == 'lowercain':
-    #     yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2018)) 
-            
-    # if wx_stations_name[l] == 'mountmaya':
-    #     yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2013)) 
         
     if wx_stations_name[l] == 'cainridgerun':
          yr_range = np.delete(yr_range, np.flatnonzero(yr_range == 2018))   
@@ -203,13 +187,6 @@ for l in range(len(wx_stations_name)):
         step_size = 12 # in mm (record 2021 Nov atmospheric river was ~120mm/24hr)
         qaqc_1, flags_1 = qaqc_functions.static_range_test(qaqc_arr[var], data, flag, step_size)
         qaqc_arr[var] = qaqc_1
-        
-        # temp fix for offset which is preceded by nan but is not getting picked
-        # up because there are nans beforehand.
-        if wx_stations_name[l] == 'plummerhut':
-            idx = np.where(qaqc_1 == 400)
-            qaqc_1.iloc[idx] = np.nan
-            flags_1.iloc[idx] = 1
         
         #%% Remove all negative values (non-sensical)
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]

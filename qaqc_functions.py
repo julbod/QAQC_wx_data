@@ -11,9 +11,17 @@ import math
 def static_range_test(data_all, data_subset, flag, step):
     flag_arr = pd.Series(np.zeros((len(data_all))))
     
-    for i in range(len(data_subset)-1):
-        if abs(data_subset.iloc[i] - data_subset.iloc[i-1]) > step:
-            idx = data_subset.index[i]
+    # only select non-nan data points
+    data = data_subset
+    idx_exist = (data[data.isnull()==False].index.tolist()) # indices of existing values
+    data = data[idx_exist]
+    
+    for i in range(len(data)-1):
+        # only do the following loop on non-nan data and make sure there isn't more
+        # than arbitrary 72 data points between non-nan values to avoid any 
+        # large outliers being removed due to lengthier gap in data
+        if abs(data.iloc[i] - data.iloc[i-1]) > step and data.index[i]-data.index[i-1] < 72:
+            idx = data.index[i]
             data_all[idx] = np.nan
             flag_arr[idx] = flag         
     return data_all, flag_arr

@@ -62,13 +62,13 @@ def duplicates_window(data_all, data_subset, flag, window, threshold):
     
     for i in range(len(data_subset)-window):
         # for duplicate values at 100
-        if threshold == 100 and all(data_subset.iloc[i:i+window] == threshold):
+        if threshold > 10 and all(data_subset.iloc[i:i+window] == threshold): # arbitrary value (i.e. >10) to make sure you're selecting the big threshold
             idx = data_subset.index[i:i+window]
             data_all[idx] = np.nan
             flag_arr[idx] = flag  
             
         # for duplicate values at 0
-        elif threshold == 0 and all(data_subset.iloc[i:i+window] == threshold):
+        elif threshold < 10 and all(data_subset.iloc[i:i+window] == threshold): # arbitrary value (i.e. <10) to make sure you're selecting the big threshold
             idx = data_subset.index[i:i+window]
             data_all[idx] = np.nan
             flag_arr[idx] = flag      

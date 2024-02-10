@@ -201,21 +201,11 @@ for l in range(len(wx_stations_name)):
         # qaqc_1, flags_1 = qaqc_functions.static_range_test(qaqc_arr[var], data, flag, step_size)
         # qaqc_arr[var] = qaqc_1
                 
-        #%% Remove duplicate consecutive values == 360deg or == 0deg for Wind Dir
-        # equal to 360 deg        
+        #%% Remove duplicate consecutive values over specific window
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 3
-        window = 120 # in hours (equivalent to 5 days)
-        threshold = 360
-        qaqc_3, flags_3 = qaqc_functions.duplicates_window(qaqc_arr[var], data, flag, window, threshold)
-        qaqc_arr[var] = qaqc_3
-        
-        # equal to 0 deg        
-        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
-        flag = 3
-        window = 120 # in hours (equivalent to 5 days)
-        threshold = 0
-        qaqc_3, flags_3 = qaqc_functions.duplicates_window(qaqc_arr[var], data, flag, window, threshold)
+        window = 5 # hours
+        qaqc_3, flags_3 = qaqc_functions.duplicates_window_WindDir(qaqc_arr[var], data, flag, window)
         qaqc_arr[var] = qaqc_3
        
         #%% merge flags together into large array, with comma separating multiple

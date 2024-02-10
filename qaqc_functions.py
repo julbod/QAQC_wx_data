@@ -62,16 +62,58 @@ def duplicates_window(data_all, data_subset, flag, window, threshold):
     
     for i in range(len(data_subset)-window):
         # for duplicate values at 100
-        if threshold > 10 and all(data_subset.iloc[i:i+window] == threshold): # arbitrary value (i.e. >10) to make sure you're selecting the big threshold
+        if threshold == 100 and all(data_subset.iloc[i:i+window] == threshold):
             idx = data_subset.index[i:i+window]
             data_all[idx] = np.nan
             flag_arr[idx] = flag  
             
         # for duplicate values at 0
-        elif threshold < 10 and all(data_subset.iloc[i:i+window] == threshold): # arbitrary value (i.e. <10) to make sure you're selecting the big threshold
+        elif threshold == 0 and all(data_subset.iloc[i:i+window] == threshold):
             idx = data_subset.index[i:i+window]
             data_all[idx] = np.nan
             flag_arr[idx] = flag      
+            
+    return data_all, flag_arr
+
+#%% Remove duplicate values over specific window size. Developped for Wind Direction
+# and appears to work better than the earlier function's version as it does
+# not rely on setting a specific threshold and relies instead on np.diff
+# to find difference between adjacent values and calculate if those duplicates
+# are found over a window greater than the one set in the parameters
+def duplicates_window_WindDir(data_all, data_subset, flag, window):
+    flag_arr = pd.Series(np.zeros((len(data_all))))
+    end = False # in case the last elements in the ts are not duplicates
+  
+    # find first np.diff and add 1 to last index in array if the last index is 
+    # a duplicate value (necessary for the below code to correctly identify
+    # dupliates towards the end of the timeseries)
+    diff = np.diff(data_subset)
+    if diff[-1] == 0:
+        data_subset.iloc[-1] = 1 # temp arbitrary value
+        end = True # change the end variable in case duplicates finish the ts
+    
+    # find (second) proper np.diff and identify indices of non-duplicates
+    diff = np.diff(data_subset)
+    idx_jumps = np.flatnonzero(diff!= 0) # only keep indices indicating duplicates
+    
+    # make sure index 0 is fist index (in case it's not)
+    if idx_jumps[0] != 0:
+        idx_jumps = np.insert(idx_jumps, 0, 0) 
+                
+    # place nans for all duplicate values over specific window size. Make sure
+    # if duplicates are found at the end of the ts, then you add +2 to the indices
+    # to cope with the np.diff function
+    for i in range(len(idx_jumps)-1):
+        if idx_jumps[i+1]-idx_jumps[i] > window:
+            idx = data_subset.index[idx_jumps[i]+1:idx_jumps[i+1]+1]
+            
+            # in case duplicates are found at the end of the ts
+            if end == True and i == len(idx_jumps)-1:
+                idx = data_subset.index[idx_jumps[i]+1:idx_jumps[i+1]+2] # +2
+            
+            # place nans and add a flag number
+            data_all[idx] = np.nan
+            flag_arr[idx] = flag 
             
     return data_all, flag_arr
 

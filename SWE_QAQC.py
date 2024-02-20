@@ -124,6 +124,12 @@ for l in range(len(wx_stations_name)):
         raw = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         qaqc_arr = sql_file.copy() # array to QAQC
         
+        #%% add temporary fix to Calyton Falls SWE 2024
+        if wx_stations_name[l] == 'claytonfalls':
+            idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2023-10-01 00:00:00'))
+            if idx_last in raw.index:
+                raw.loc[idx_last:] = raw.loc[idx_last:] - 47
+        
         #%% Apply static range test (remove values where difference is > than value)
         # Maximum value between each step: 10 degrees
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]

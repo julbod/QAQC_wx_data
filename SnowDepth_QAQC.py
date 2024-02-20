@@ -119,7 +119,7 @@ for l in range(len(wx_stations_name)):
         raw = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         qaqc_arr = sql_file.copy() # array to QAQC
         
-        # add temporary fix to Mt Cayley Snow Depth
+        #%% add temporary fix to Mt Cayley Snow Depth
         if wx_stations_name[l] == 'mountcayley':
             idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2023-10-31 15:00:00'))
             if idx_last in raw.index:

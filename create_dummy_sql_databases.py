@@ -31,7 +31,6 @@ import pandas as pd
 from sqlalchemy import create_engine
 import numpy as np
 import re
-import copy
 import os
 from datetime import datetime
 
@@ -57,15 +56,30 @@ for i in range(len(wx_stations_lst)):
 wx_stations = [x for x in wx_stations if "clean" in x ]
 wx_stations = [x for x in wx_stations if not "legacy_ontree" in x] # remove legacy data for Cairnridgerun
 wx_stations = [x for x in wx_stations if not "_test" in x] # remove legacy data for Cairnridgerun
+wx_stations = [x for x in wx_stations if not "clean_eastbuxton_archive" in x] # remove machmell from list
 wx_stations = [x for x in wx_stations if not "clean_steph10" in x] # remove legacy data for Cairnridgerun\wx_stations = [w.replace('clean_eastbuxton_archive', 'clean_temp') for w in wx_stations] # rename steph3 so it doesn't get cut out
-wx_stations = [x for x in wx_stations if not "clean_eastbuxton" in x] # remove machmell from list
-wx_stations = [w.replace('clean_temp', 'clean_eastbuxton') for w in wx_stations] # rename steph3 so it doesn't get cut out
 wx_stations = [w.replace('clean_machmellkliniklini', 'clean_Machmellkliniklini') for w in wx_stations] # rename machmellkliniklini so it doesn't get cut out
 wx_stations = [x for x in wx_stations if not "russell" in x] # remove russell from list
 wx_stations = [w.replace('clean_Machmellkliniklini', 'clean_machmellkliniklini') for w in wx_stations] # rename machmellkliniklini back to original
+
+# deal with Stephanies
+keep_steph = False
+
+# if you don't want Stephs, then remove all except from Steph 3 and 6 which are satellite connected
+if keep_steph == False:
+    wx_stations = [w.replace('clean_steph3', 'clean_Stephanie3') for w in wx_stations] # rename steph3 so it doesn't get cut out
+    wx_stations = [w.replace('clean_steph6', 'clean_Stephanie6') for w in wx_stations] # rename steph6 so it doesn't get cut out
+    wx_stations = [x for x in wx_stations if not "steph" in x] # remove all stephanies
+    wx_stations = [w.replace('clean_Stephanie3', 'clean_steph3') for w in wx_stations] # rename steph3 back to original
+    wx_stations = [w.replace('clean_Stephanie6', 'clean_steph6') for w in wx_stations] # rename steph6 back to original
+    stephs = []
+    
+# else if you want Stephanies, select specific ones 
+else:
+    stephs = ['steph1', 'steph2', 'steph4', 'steph6', 'steph7', 'steph8'] # string with all Stephanies except Steph3
+
 wx_stations_name = list(map(lambda st: str.replace(st, 'clean_', ''), wx_stations)) # remove 'clean_' for csv export
 wx_stations_name_cap = [wx_name.capitalize() for wx_name in wx_stations_name] # capitalise station name
-stephs = ['steph1', 'steph2', 'steph4', 'steph6', 'steph7', 'steph8'] # string with all Stephanies except Steph3
 
 #%% Loop over each station at a time and clean up the snow depth variable
 for l in range(len(wx_stations_name)):
@@ -77,34 +91,31 @@ for l in range(len(wx_stations_name)):
     # CSV column names
     sql_file = pd.read_sql(sql="SELECT * FROM clean_" + sql_database, con = engine)
     sql_file = sql_file.set_index('DateTime').asfreq('1H').reset_index() # make sure records are continuous every hour
-
-    # Fix issue with Datlamen and Rennell where time is not rounded to nearest
-    # hour which affects how the code below works
-#    if wx_stations_name[l] == 'datlamen' or 'rennellpass':
-#        df_dt = sql_file.set_index('DateTime') 
-#        dt_sql = copy.deepcopy(sql_file['DateTime'])
-#        dt_sql = pd.to_datetime(dt_sql)
-#        for i in range(len(sql_file)):
-#            dt_sql[i] = dt_sql[i].floor('H') # floor to nearest hour
-            
-#        sql_file['DateTime'] = dt_sql
         
     #%% Only select earliest possible date for full year
     dt_sql = pd.to_datetime(sql_file['DateTime'])    
-    yr_last = int(np.flatnonzero(sql_file['DateTime'] == '2023-10-01 00:00:00'))
     yr_str = dt_sql[0].year # index of year 1
     dt_str = np.flatnonzero(dt_sql >= np.datetime64(datetime(yr_str, 10, 1, 00, 00, 00)))[0] # index of full water year for start of timeseries
     
-    #%% only keep data from oldest to last water year
-    # if wx_station is stephanie (except Steph3), then find nearest date to Sept 30 2023
+    #%% only keep data from oldest to newest default date except for exceptions  
+    # Stephs not connected to satellite have data up to Oct 2023
     if wx_stations_name[l] in stephs: 
         end_yr_sql = qaqc_functions.nearest(dt_sql, datetime(2023, 9, 30, 23, 00, 00))
         new_df = sql_file.loc[:int(np.flatnonzero(sql_file['DateTime'] == end_yr_sql))]
         
-    # otherwise if any other stations, then select Sept 30 2023 as latest date
+    # Mt Maya went offline in Nov 2024
+    elif wx_stations_name[l] == 'mountmaya':
+        end_yr_sql = qaqc_functions.nearest(dt_sql, datetime(2024, 1, 11, 7, 0, 0))
+        new_df = sql_file.loc[:int(np.flatnonzero(sql_file['DateTime'] == end_yr_sql))]
+
+    # Machmell went offline in Feb 2023
+    elif wx_stations_name[l] == 'machmell':
+        end_yr_sql = qaqc_functions.nearest(dt_sql, datetime(2023, 2, 12, 11, 00, 00))
+        new_df = sql_file.loc[:int(np.flatnonzero(sql_file['DateTime'] == end_yr_sql))]
+        
+    # otherwise if any other stations, then select Feb 2024 as latest date
     else:
-        new_df = sql_file[:int(np.flatnonzero(sql_file['DateTime'] == '2023-10-01 00:00:00'))]
-        #new_df = sql_file[dt_str:int(np.flatnonzero(sql_file['DateTime'] == '2023-10-01 00:00:00'))]
+        new_df = sql_file[:int(np.flatnonzero(sql_file['DateTime'] == '2024-02-19 07:00:00'))]
     
     nanout = [c for c in new_df.columns if c not in ['DateTime', 'WatYr']]
     new_df[nanout] = np.nan

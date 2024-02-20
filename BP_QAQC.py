@@ -1,19 +1,16 @@
 # This code attempts to QA/QC the BP data in a full year for all 
 # wx stations and all years
 
-# Written by Julien Bodart (VIU) - 16/11/2023
+# Written and modified by Julien Bodart (VIU) - 19/02/2024
 import os
 import pandas as pd 
 import os.path
 from sqlalchemy import create_engine
 from datetime import datetime
 import numpy as np
-import copy
 import matplotlib.pyplot as plt
-from csv import writer
 import re
 from pathlib import Path
-import traceback
 
 #%% import support functions
 os.chdir('D:/GitHub/QAQC_wx_data')
@@ -53,7 +50,7 @@ wx_stations_name = list(map(lambda st: str.replace(st, 'clean_', ''), wx_station
 wx_stations_name_cap = [wx_name.capitalize() for wx_name in wx_stations_name] # capitalise station name
 
 #%% Loop over each station at a time and clean up the BP variable
-for l in range(len(wx_stations_name)):
+for l in range(len(wx_stations_name)):    
     sql_database = wx_stations_name[l]
     sql_name = wx_stations_name_cap[l]
     
@@ -66,7 +63,16 @@ for l in range(len(wx_stations_name)):
     #%% import current data on SQL database and clean name of some columns to match
     # CSV column names
     sql_file = pd.read_sql(sql="SELECT * FROM clean_" + sql_database, con = engine)
-
+        
+    # make sure you only go as far as specific date for all wx stations for current water year
+    # Mt Maya went offline in Nov 2024
+    if wx_stations_name[l] == 'mountmaya':
+        sql_file_idx_latest = int(np.flatnonzero(sql_file['DateTime'] == '2024-01-11 07:00:00')+1) # arbitrary date
+        sql_file = sql_file[:sql_file_idx_latest]
+    else:
+        sql_file_idx_latest = int(np.flatnonzero(sql_file['DateTime'] == '2024-02-19 06:00:00')+1) # arbitrary date
+        sql_file = sql_file[:sql_file_idx_latest]
+    
     #%% Make sure there is no gap in datetime (all dates are consecutive) and place
     # nans in all other values if any gaps are identified
     df_dt = pd.Series.to_frame(sql_file['DateTime'])    
@@ -78,104 +84,25 @@ for l in range(len(wx_stations_name)):
     var_name = 'BP'
     var_name_short = 'BP'
     
-    #%% Loop over all years of weather station data and apply a QA/QC routine
-    # get year range of dataset and loop through each year if these contain a full
-    # 12-month water year
     if 10 <= datetime.now().month and datetime.now().month <= 12:
-        yr_range = np.arange(dt_sql[0].year, datetime.now().year) # find min and max years
+        yr_range = np.arange(dt_sql[0].year, datetime.now().year+1) # find min and max years
     else: 
-        yr_range = np.arange(dt_sql[0].year, datetime.now().year-1) # find min and max years
-    
+        yr_range = np.arange(dt_sql[0].year, datetime.now().year) # find min and max years
+        
     qaqc_arr_final = []
-
     for k in range(len(yr_range)):
         print('## Cleaning data for year: %d-%d ##' %(yr_range[k],yr_range[k]+1)) 
-     
-        # calculate datetime for winter/summer and 12 months of that year
-        # if exists (i.e. if there is a full 12 month water year (YYYY-10-01 to 
-        # YYYY+1-09-30))
-        try:
-            # find summer, winter and annual datetimes
-            dt_winter_yr = np.concatenate(([np.where(dt_sql == np.datetime64(datetime(yr_range[k], 10, 1, 00, 00, 00))), np.where(dt_sql == np.datetime64(datetime(yr_range[k]+1, 7, 31, 00, 00, 00)))]))
-            dt_summer_yr = np.concatenate(([np.where(dt_sql == np.datetime64(datetime(yr_range[k]+1, 7, 1, 00, 00, 00))), np.where(dt_sql == np.datetime64(datetime(yr_range[k]+1, 9, 23, 00, 00, 00)))]))
-            dt_yr = np.concatenate(([np.where(dt_sql == np.datetime64(datetime(yr_range[k], 10, 1, 00, 00, 00))), np.where(dt_sql == np.datetime64(datetime(yr_range[k]+1, 9, 30, 23, 00, 00)))]))
-
-        # if not full year - find issue and attempt to fix it if there are some 
-        # days missing at start or end of water year
-        except ValueError:
-            err_var = traceback.format_exc() # extract error message for variable        
-            print('It appears that there is no summer/winter data for year: %d-%d - checking ...' %(yr_range[k],yr_range[k]+1))
-            
-            # find nearest date for both summer and winter compared to typical
-            # year where winter starts YYYY-10-01 and summer ends YYYY+1-09-30
-            start_yr_sql = qaqc_functions.nearest(dt_sql, datetime(yr_range[k], 10, 1, 00, 00, 00))
-            end_yr_sql = qaqc_functions.nearest(dt_sql, datetime(yr_range[k+1], 9, 30, 23, 00, 00))
-
-            # if the start of the winter for this dataset is not too different 
-            # than the start of the winter for a typical year (i.e. YYYY-12-15), 
-            # which would indicate a lack of early winter data for this dataset,
-            # still continue with the loop with slightly truncated dataset at 
-            # the start
-            if 'dt_winter' in err_var and start_yr_sql <= datetime(yr_range[k], 12, 15, 00, 00, 00):
-                print('# Shorter winter timeseries for year: %d-%d - going ahead #' %(yr_range[k],yr_range[k]+1))
-                dt_yr = np.concatenate(([np.where(dt_sql == start_yr_sql), np.where(dt_sql == np.datetime64(datetime(yr_range[k]+1, 9, 30, 23, 00, 00)))]))
-                dt_winter_yr = np.concatenate(([np.where(dt_sql == start_yr_sql), np.where(dt_sql == np.datetime64(datetime(yr_range[k]+1, 7, 31, 23, 00, 00)))]))
-                dt_summer_yr = np.concatenate(([np.where(dt_sql == np.datetime64(datetime(yr_range[k]+1, 7, 1, 00, 00, 00))), np.where(dt_sql == np.datetime64(datetime(yr_range[k]+1, 9, 23, 00, 00, 00)))]))
-
-            # if the end of the summer for this dataset is not too different 
-            # than the end of the summer for a typical year (i.e. YYYY+1-09-30), 
-            # which would indicate a lack of summer data towards the end of this 
-            # dataset, still continue with the loop with slightly truncated 
-            # dataset at the end
-            elif 'dt_summer' in err_var and end_yr_sql >= datetime(yr_range[k+1], 7, 15, 00, 00, 00):
-                print('# Shorter summer timeseries for year: %d-%d - going ahead #' %(yr_range[k],yr_range[k]+1))
-                dt_yr = np.concatenate(([np.where(dt_sql == np.datetime64(datetime(yr_range[k], 10, 1, 00, 00, 00))), np.where(dt_sql == end_yr_sql)]))
-                dt_summer_yr = np.concatenate(([np.where(dt_sql == np.datetime64(datetime(yr_range[k]+1, 7, 1, 00, 00, 00))), np.where(dt_sql == np.datetime64(datetime(yr_range[k]+1, 9, 23, 00, 00, 00)))]))
-            
-            # else if this difference is too big for either winter or summer
-            # then skip the dataset completely and go to next year
-            else:
-                print('Full summer/winter data for year: %d-%d is lacking - exiting loop' %(yr_range[k],yr_range[k]+1))
-                # write warning to csv for inventory
-                with open("D:/Vancouver_Island_University/Wx_station/wx_data_processing/QAQC/v2/individual_figures/" + sql_database + "/BP/messages_" + sql_name + ".csv", 'a', newline='') as f_object:
-                    writer_object = writer(f_object)
-                    writer_object.writerow([sql_name + ' ' + var_name + ': no full summer/winter data - not QA/QCed for year:', yr_range[k],yr_range[k]+1])
-                    f_object.close()
-                
-                # skip to next iteration if error found
-                continue
-        
-        # likewise, if BP is all NaNs or there is no yearly data
-        # (e.g. Steph 3 early years) then skip iteration
-        if sql_file[var].isnull().all() or dt_yr.size == 0: # if all nans or there is no yearly data
-            print('It appears that there is no BP data for year: %d-%d - exiting loop' %(yr_range[k],yr_range[k]+1))
-            
-            # write warning to csv for inventory
-            with open("D:/Vancouver_Island_University/Wx_station/wx_data_processing/QAQC/v2/individual_figures/" + sql_database + "/BP/QAQC_issues_" + sql_name + ".csv", 'a', newline='') as f_object:
-                writer_object = writer(f_object)
-                writer_object.writerow([sql_name + ' ' + var_name + ': lack of BP data - not QA/QCed for year:', yr_range[k],yr_range[k]+1])
-                f_object.close()
-            
-            # skip to next iteration if error found
-            continue  
-
-        # plot raw data from SQL 'clean_xxxx' database and save to file
-        #fig = plt.figure()
-        #plt.plot(sql_file['DateTime'].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)],sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)])
-        #plt.title(sql_name + ' %s Raw WTYR %d-%d' %(var_name,yr_range[k],yr_range[k]+1))
-        #plt.savefig('%d_%s %s Original-Raw WTYR %d-%d.png' %(k, sql_name, var_name_short,yr_range[k],yr_range[k]+1), dpi=400)
-        #plt.close()
-        #plt.clf()
-        #plt.show()
-        
+    
+        # find indices of water years
+        start_yr_sql = qaqc_functions.nearest(dt_sql, datetime(yr_range[k], 10, 1))
+        end_yr_sql = qaqc_functions.nearest(dt_sql, datetime(yr_range[k]+1, 9, 30, 23, 00, 00))
+    
+        # select data for the whole water year based on datetime object
+        dt_yr = np.concatenate(([np.where(dt_sql == start_yr_sql), np.where(dt_sql == end_yr_sql)]))
+    
         # store for plotting
         raw = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         qaqc_arr = sql_file.copy() # array to QAQC
-        
-        #%% find min value for specific interval (if needed)
-        #idx_first = int(np.flatnonzero(qaqc_arr['DateTime'] == '2023-04-19 13:00:00'))
-        #idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2020-11-12 08:00:00'))
-        #round(np.mean(qaqc_arr[var].iloc[idx_first:idx_last]),2)
         
         #%% Remove values above 120 kpa or below 30 kpa threshold
         # above 120kpa
@@ -207,16 +134,6 @@ for l in range(len(wx_stations_name)):
         qaqc_4, flags_4 = qaqc_functions.mean_rolling_month_window(qaqc_arr[var], flag, dt_sql, st_dev)
         qaqc_arr[var] = qaqc_4
         
-        #%% Remove any last outliers using sliding window of 20 samples and 
-        # calculating the difference between the value at [i] and the mean of 
-        # sliding window which should not exceed a specific value
-        # Maximum value between each step: 30 cm
-        #flag = 5
-        #mean_sliding_val = 30 # in cm
-        #window_len = 20 # previously 20
-        #qaqc_5, flags_5 = qaqc_functions.mean_sliding_window(qaqc_arr[var], data, flag, window_len, mean_sliding_val)
-        #qaqc_arr[var] = qaqc_5
-        
         #%% Interpolate nans with method='linear' using pandas.DataFrame.interpolate
         # First, identify gaps larger than 3 hours (which should not be interpolated)
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
@@ -245,9 +162,9 @@ for l in range(len(wx_stations_name)):
         
         #%% append to qaqc_arr_final after every k iteration
         qaqc_arr_final.append(qaqc_arr.iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)])
-    
+
     #%% push qaqced variable to SQL database
-    # as above, skip iteration if all BP is null
+    # as above, skip iteration if all air_temp is null
     if sql_file[var].isnull().all() or dt_yr.size == 0:
         continue
     # otherwise, if data (most stations), keep running
@@ -255,7 +172,7 @@ for l in range(len(wx_stations_name)):
         print('# Writing newly qaqced data to SQL database #') 
         qaqc_arr_final = pd.concat(qaqc_arr_final) # concatenate lists
         sql_qaqc_name = 'qaqc_' + wx_stations_name[l]
-        qaqc_sDepth = pd.concat([qaqc_arr_final['DateTime'],qaqc_arr_final['BP'],qaqc_arr_final['BP_flags']],axis=1)
+        qaqced_array = pd.concat([qaqc_arr_final['DateTime'],qaqc_arr_final['BP'],qaqc_arr_final['BP_flags']],axis=1)
         
         # import current qaqc sql db and find columns matching the qaqc variable here
         existing_qaqc_sql = pd.read_sql('SELECT * FROM %s' %sql_qaqc_name, engine)
@@ -264,10 +181,9 @@ for l in range(len(wx_stations_name)):
         
         # push newly qaqced variable to SQL database -
         # move the qaqc columns into the appropriate columns in existing qaqc sql database
-        existing_qaqc_sql[colnames[col_positions]] = pd.concat([qaqc_sDepth['BP'],qaqc_sDepth['BP_flags']],axis=1)
+        existing_qaqc_sql[colnames[col_positions]] = pd.concat([qaqced_array['BP'],qaqced_array['BP_flags']],axis=1)
         existing_qaqc_sql.to_sql(name='%s' %sql_qaqc_name, con=engine, if_exists = 'replace', index=False)
         
         # make sure you assign 'DateTime' column as the primary column
         with engine.connect() as con:
                 con.execute('ALTER TABLE `qaqc_%s`' %wx_stations_name[l] + ' ADD PRIMARY KEY (`DateTime`);')
-           

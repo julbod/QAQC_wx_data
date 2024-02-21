@@ -90,6 +90,18 @@ The order of the flags in the below tables reflects the order of each qaqc step 
 | 2.	Remove values above **360 degrees** or below **0 degrees** |
 | 3.	Remove duplicate consecutive values for window size of **5 hours** | 
 
+| Wind_Speed Flags: | 
+| ------------- |
+| 0.	No qaqc required | 
+| 2.	Remove values above **120 degrees** or below **0 degrees** |
+| 3.	Remove duplicate consecutive values for window size of **5 hours** | 
+
+| Pk_Wind_Speed Flags: | 
+| ------------- |
+| 0.	No qaqc required | 
+| 2.	Remove values above **120 degrees** or below **0 degrees** |
+| 3.	Remove duplicate consecutive values for window size of **5 hours** | 
+
 ## QAQC known issues regarding offsets, issues with qaqc worklfow, or common issue with the data:
 
 Below are some examples where the qaqc process has either not worked well or there are offset in the data which have not been corrected for due to lack of clear understanding of the reason behind the offset. Decisions must be made as to what to do with these offsets, and then re-run the qaqc code on the offset-corrected data. Note that this list is by no means exhaustive. 
@@ -169,5 +181,11 @@ None. Cumsum is recalculated from the qaqced PP_Tipper data. Flag number is set 
 None. Minimal qaqc was applied (see tables above).
 
 ### Pk_Wind_Dir:
+None. Minimal qaqc was applied (see tables above).
+
+### Wind_Speed:
+None. Minimal qaqc was applied (see tables above).
+
+### Pk_Wind_Speed:
 None. Minimal qaqc was applied (see tables above).
 

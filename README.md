@@ -94,13 +94,13 @@ The order of the flags in the below tables reflects the order of each qaqc step 
 | ------------- |
 | 0.	No qaqc required | 
 | 2.	Remove values above **120 degrees** or below **0 degrees** |
-| 3.	Remove duplicate consecutive values for window size of **5 hours** | 
+| 3.	Remove duplicate consecutive values for window size of **50 hours** | 
 
 | Pk_Wind_Speed Flags: | 
 | ------------- |
 | 0.	No qaqc required | 
 | 2.	Remove values above **120 degrees** or below **0 degrees** |
-| 3.	Remove duplicate consecutive values for window size of **5 hours** | 
+| 3.	Remove duplicate consecutive values for window size of **50 hours** | 
 
 ## QAQC known issues regarding offsets, issues with qaqc worklfow, or common issue with the data:
 

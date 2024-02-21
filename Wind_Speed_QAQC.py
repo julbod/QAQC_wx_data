@@ -131,7 +131,7 @@ for l in range(len(wx_stations_name)):
         #%% Remove duplicate consecutive values over specific window
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 3
-        window = 5 # hours
+        window = 50 # hours
         qaqc_3, flags_3 = qaqc_functions.duplicates_window_WindDir(qaqc_arr[var], data, flag, window)
         qaqc_arr[var] = qaqc_3
        

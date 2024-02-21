@@ -123,12 +123,12 @@ for l in range(len(wx_stations_name)):
         # store for plotting
         raw = sql_file[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         qaqc_arr = sql_file.copy() # array to QAQC
-        
-        #%% add temporary fix to Calyton Falls SWE 2024
-        if wx_stations_name[l] == 'claytonfalls':
-            idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2023-10-01 00:00:00'))
-            if idx_last in raw.index:
-                raw.loc[idx_last:] = raw.loc[idx_last:] - 47
+                
+        #%% add temporary fix to specific wx stations
+        if wx_stations_name[l] == 'lowercain':
+            idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2024-01-14 14:00:00'))
+            if idx_last in qaqc_arr.index:
+                qaqc_arr[var].loc[idx_last:] = np.nan
         
         #%% Apply static range test (remove values where difference is > than value)
         # Maximum value between each step: 10 degrees
@@ -168,7 +168,13 @@ for l in range(len(wx_stations_name)):
             qaqc_arr[var].iloc[idx_first:idx_last] = np.nan
             qaqc_arr["SWE"].iloc[idx_first:idx_last] = np.nan
             flags_1.iloc[idx_first:idx_last] = 1
-            
+                
+        #%% Bring timeseries back to 0 at start of water year
+        data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
+        flag = 3
+        qaqc_3, flags_3 = qaqc_functions.reset_zero_watyr(qaqc_arr[var], data, flag)
+        qaqc_arr[var] = qaqc_3  
+        
         #%% Remove all negative values (non-sensical)
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 2
@@ -209,7 +215,7 @@ for l in range(len(wx_stations_name)):
         
         #%% merge flags together into large array, with comma separating multiple
         # flags for each row if these exist
-        flags = pd.concat([flags_1,flags_2,flags_6,flags_7,flags_8],axis=1)
+        flags = pd.concat([flags_1,flags_2,flags_3,flags_6,flags_7,flags_8],axis=1)
         qaqc_arr['SWE_flags'] = flags.apply(qaqc_functions.merge_row, axis=1)
         
         # for simplicity, if flag contains flag 6 amongst other flags in one row,

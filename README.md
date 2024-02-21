@@ -21,6 +21,7 @@ The order of the flags in the below tables reflects the order of each qaqc step 
 | 0.	No qaqc required | 
 | 1.	Outlier removal #1 (between i and i-1): **20 mm** threshold | 
 | 2.	Remove negative values | 
+| 3.	Reset timeseries to start at **0** at every new water year | 
 | 6.	Set values to zero in summer season | 
 | 7.	Outlier removal #2 (between i and i-1) – multiple thresholds: **15, 10 mm** | 
 | 8.	Interpolation of NULL/NaN values for gaps smaller than or equal to **3 hours** | 

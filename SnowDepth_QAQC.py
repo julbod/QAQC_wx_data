@@ -122,17 +122,38 @@ for l in range(len(wx_stations_name)):
         #%% add temporary fix to Mt Cayley Snow Depth
         if wx_stations_name[l] == 'mountcayley':
             idx_last = int(np.flatnonzero(qaqc_arr['DateTime'] == '2023-10-31 15:00:00'))
-            if idx_last in raw.index:
-                raw.iloc[:int(np.flatnonzero(raw.index == idx_last-1))] = raw.iloc[:int(np.flatnonzero(raw.index == idx_last-1))] - 626.4
-            raw = raw+10 # add 10 as offset eyeballed in November 2023 before snowfall
-
+            if idx_last in qaqc_arr.index:
+                qaqc_arr[var].iloc[:int(np.flatnonzero(qaqc_arr.index == idx_last-1))] = qaqc_arr[var].iloc[:int(np.flatnonzero(qaqc_arr.index == idx_last-1))] - 626.4
+            qaqc_arr[var] = qaqc_arr[var]+9 # add 10 as offset eyeballed in November 2023 before snowfall
+        
+        if wx_stations_name[l] == 'apelake':
+            qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)] = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]-10.65 # add 10 as offset eyeballed in November 2023 before snowfall
+        
+        if wx_stations_name[l] == 'klinaklini':
+            qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)] = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]-9 # add 10 as offset eyeballed in November 2023 before snowfall
+        
+        if wx_stations_name[l] == 'lowercain':
+            qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)] = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]-11 # add 10 as offset eyeballed in November 2023 before snowfall
+        
+        if wx_stations_name[l] == 'mountarrowsmith':
+            qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)] = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]+2 # add 10 as offset eyeballed in November 2023 before snowfall
+        
+        if wx_stations_name[l] == 'mountmaya':
+            qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)] = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]-5 # add 10 as offset eyeballed in November 2023 before snowfall
+                
+        if wx_stations_name[l] == 'perseverance':
+            qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)] = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]+7 # add 10 as offset eyeballed in November 2023 before snowfall
+                        
+        if wx_stations_name[l] == 'uppercruickshank':
+            qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)] = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]-14 # add 10 as offset eyeballed in November 2023 before snowfall
+        
         #%% Apply static range test (remove values where difference is > than value)
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 1
         step_size = 25 # in cm
         qaqc_1, flags_1 = qaqc_functions.static_range_test(qaqc_arr[var], data, flag, step_size)
         qaqc_arr[var] = qaqc_1
-
+        
         #%% Remove all negative values (non-sensical)
         data = qaqc_arr[var].iloc[np.arange(dt_yr[0].item(),dt_yr[1].item()+1)]
         flag = 2

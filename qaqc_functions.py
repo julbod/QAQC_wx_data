@@ -389,6 +389,7 @@ def interpolate_RH_qaqc(data_all_rh, data_subset_rh, data_subset_temp, flag, max
     flag_arr[idx] = flag        
 
     return data_all_rh, flag_arr
+
 #%% merge individual arrays together and split by ',' if multiple integers in
 # one column
 def merge_row(row):
@@ -497,6 +498,7 @@ def fix_pc_pipe_evaporation(data_all, data_subset, flag):
     corrected_data.iloc[0:len(cum_corrected)] = cum_corrected / max(cum_corrected) * rg
     corrected_data.iloc[nan_idxs] = np.nan # reset nans for pre-interpolation
     corrected_data.iloc[0] = first_idx_val # reset first index in ts from before
+    corrected_data.iloc[-1] = corrected_data.iloc[-1] + abs(corrected_data.iloc[-2]-corrected_data.iloc[-1]) # add diff to last index which was omitted from np.diff earlier
     
     data_all.iloc[corrected_data.index] = np.round(corrected_data,1) # round data
     flag_arr.iloc[corrected_data.index] = flag
